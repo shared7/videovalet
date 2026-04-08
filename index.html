@@ -500,6 +500,7 @@ function handleFiles(files) {
   if (!videos.length) return;
   selectedFiles = [...selectedFiles, ...videos];
   renderFileList();
+  scrollToDropZone();
 }
 
 function renderFileList() {
