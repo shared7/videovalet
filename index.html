@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VideoValet — Edit video by talking to it</title>
+  <meta name="description" content="Edit video by talking to it. No timelines, no export dialogs — drop your files, describe what you want, and VideoValet handles the FFmpeg." />
+  <meta name="theme-color" content="#0a0a0a" />
+
+  <!-- Open Graph -->
+  <meta property="og:type"        content="website" />
+  <meta property="og:title"       content="VideoValet — Edit video by talking to it" />
+  <meta property="og:description" content="No timelines. No export dialogs. Drop your files, describe what you want — VideoValet figures out the rest." />
+  <meta property="og:image"       content="thumbnail_3.jpg" />
+
+  <!-- Twitter -->
+  <meta name="twitter:card"        content="summary_large_image" />
+  <meta name="twitter:title"       content="VideoValet — Edit video by talking to it" />
+  <meta name="twitter:description" content="No timelines. No export dialogs. Drop your files, describe what you want — VideoValet figures out the rest." />
+  <meta name="twitter:image"       content="thumbnail_3.jpg" />
+
+  <!-- Structured data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "VideoValet",
+    "applicationCategory": "VideoApplication",
+    "operatingSystem": "Web",
+    "description": "Edit video by talking to it. No timelines, no export dialogs. Powered by FFmpeg and Claude AI.",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+  }
+  </script>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; background: #0a0a0a; color: #e5e5e5; overflow-x: hidden; }
+    #chat-window { scrollbar-width: none; -ms-overflow-style: none; }
+    #chat-window::-webkit-scrollbar { display: none; }
+
+    .orange-text {
+      background: linear-gradient(135deg, #f97316, #fb923c);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+
+    @keyframes blink  { 0%,100%{opacity:1} 50%{opacity:0} }
+    .cursor { display:inline-block; width:7px; height:15px; background:#f97316; vertical-align:middle; animation:blink 1s step-end infinite; border-radius:1px; }
+
+    @keyframes msgIn  { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+    .msg-in { animation: msgIn 0.25s ease forwards; }
+
+    .drop-zone { transition: border-color 0.2s, background 0.2s, transform 0.2s; cursor: pointer; }
+    .drop-zone:hover, .drop-zone.drag-over { border-color: #f97316 !important; background: #111 !important; }
+    .drop-zone.drag-over { transform: scale(1.01); box-shadow: 0 0 32px rgba(249,115,22,0.15); }
+    .drop-zone.has-files { border-color: #22c55e !important; border-style: solid !important; }
+
+    .feat-card { transition: border-color 0.2s, transform 0.2s; }
+    .feat-card:hover { border-color: #f97316; transform: translateY(-3px); }
+    .feat-card:hover .feat-cmd { color: #f97316; }
+
+    .reveal { opacity:0; transform:translateY(24px); transition:opacity 0.55s ease, transform 0.55s ease; }
+    .reveal.visible { opacity:1; transform:translateY(0); }
+
+    .terminal-body { position:relative; }
+    .terminal-body::before {
+      content:''; position:absolute; inset:0;
+      background:repeating-linear-gradient(to bottom, transparent 0px, transparent 3px, rgba(255,255,255,0.012) 3px, rgba(255,255,255,0.012) 4px);
+      pointer-events:none; border-radius:0 0 12px 12px; z-index:1;
+    }
+
+    .cta-btn { box-shadow:0 0 0 0 rgba(249,115,22,0.4); transition:background 0.2s, box-shadow 0.2s, transform 0.2s; }
+    .cta-btn:hover { background:#fb923c; box-shadow:0 0 32px 6px rgba(249,115,22,0.3); transform:translateY(-2px) scale(1.02); }
+
+    @keyframes ticker { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+    .ticker-track { display:flex; width:max-content; animation:ticker 28s linear infinite; }
+    .ticker-track:hover { animation-play-state:paused; }
+
+    body::after {
+      content:''; position:fixed; inset:0; pointer-events:none; z-index:9999;
+      background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+      opacity:0.4;
+    }
+  </style>
+</head>
+<body>
+
+<input type="file" id="file-input" accept="video/*,.mp4,.mov,.avi,.mkv,.webm" multiple class="hidden" />
+
+<!-- ═══════════════════════════ NAVBAR ═══════════════════════════ -->
+<nav class="fixed top-0 left-0 right-0 z-40 border-b border-[#141414]"
+     style="background:rgba(10,10,10,0.92);backdrop-filter:blur(16px)">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+    <a href="#" class="font-mono font-bold text-base sm:text-lg text-white tracking-tight select-none">
+      VideoValet<span class="text-orange-500">.</span>
+    </a>
+    <div class="flex items-center gap-4 sm:gap-8">
+      <a href="#features"     class="text-neutral-500 hover:text-neutral-200 text-sm transition-colors hidden md:block">Features</a>
+      <a href="#how-it-works" class="text-neutral-500 hover:text-neutral-200 text-sm transition-colors hidden md:block">How it works</a>
+      <button onclick="pickFiles()"
+              aria-label="Try VideoValet — upload your videos"
+              class="cta-btn bg-orange-500 text-black font-bold text-sm px-3 sm:px-4 py-2 rounded-lg">
+        Try Now →
+      </button>
+    </div>
+  </div>
+</nav>
+
+<main>
+<!-- ═══════════════════════════ HERO ═══════════════════════════ -->
+<section class="min-h-screen flex items-center pt-24 pb-12">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 w-full">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
+
+      <!-- Left: headline + drop zone -->
+      <div class="reveal">
+        <div class="inline-flex items-center gap-2 bg-[#111] border border-[#1f1f1f] rounded-full px-4 py-1.5 mb-6">
+          <span class="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></span>
+          <span class="text-neutral-400 text-xs font-mono tracking-wide">Powered by PicCollage</span>
+        </div>
+
+        <h1 class="text-4xl sm:text-5xl lg:text-6xl font-black leading-[1.08] mb-5 text-white">
+          Edit video<br>by <span class="orange-text">talking to it.</span>
+        </h1>
+
+        <p class="text-neutral-300 text-base sm:text-lg leading-relaxed mb-8 max-w-md">
+          No timelines. No export dialogs. Drop your files,
+          describe what you want — VideoValet figures out the rest.
+        </p>
+
+        <!-- Drop zone -->
+        <div id="drop-zone"
+             role="button"
+             aria-label="Drop videos here or click to browse"
+             tabindex="0"
+             onkeydown="if(event.key==='Enter'||event.key===' ')pickFiles()"
+             class="drop-zone border-2 border-dashed border-[#222] rounded-2xl p-8 sm:p-10 text-center group"
+             onclick="pickFiles()">
+          <div id="dz-icon" class="text-4xl sm:text-5xl mb-4 group-hover:scale-110 transition-transform duration-200">⬆</div>
+          <div id="dz-title" class="text-white font-semibold text-base sm:text-lg mb-1">Drop your videos here</div>
+          <div id="dz-sub"   class="text-neutral-500 text-sm">
+            or <span class="text-orange-500 group-hover:underline">click to browse files</span>
+          </div>
+          <div class="text-neutral-700 text-xs mt-3 font-mono">MP4 · MOV · AVI · MKV · WEBM</div>
+        </div>
+
+        <!-- File list (revealed after selection) -->
+        <div id="file-list" class="hidden mt-4 space-y-2">
+          <div id="file-list-items" class="space-y-2"></div>
+          <button id="start-btn"
+                  onclick="startEditing()"
+                  class="w-full mt-3 bg-orange-500 hover:bg-orange-400 text-black font-bold text-sm py-3 rounded-xl transition-all hover:scale-[1.01] flex items-center justify-center gap-2">
+            <svg id="start-spinner" class="hidden w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+            </svg>
+            <span id="start-label">Start editing →</span>
+          </button>
+          <button onclick="clearFiles()"
+                  class="w-full text-neutral-600 hover:text-neutral-400 text-xs py-1 transition-colors">
+            Clear selection
+          </button>
+        </div>
+      </div>
+
+      <!-- Right: animated terminal chat -->
+      <div class="reveal" style="transition-delay:0.12s">
+        <div class="rounded-2xl border border-[#1a1a1a] overflow-hidden"
+             style="box-shadow:0 0 0 1px #1a1a1a,0 32px 64px rgba(0,0,0,0.6)">
+          <div class="bg-[#0f0f0f] px-4 py-3 flex items-center gap-2 border-b border-[#1a1a1a]">
+            <span class="w-3 h-3 rounded-full bg-[#ff5f57] flex-shrink-0"></span>
+            <span class="w-3 h-3 rounded-full bg-[#ffbd2e] flex-shrink-0"></span>
+            <span class="w-3 h-3 rounded-full bg-[#28c840]  flex-shrink-0"></span>
+            <span class="text-neutral-600 text-xs font-mono ml-3 truncate">videovalet — chat</span>
+          </div>
+          <div class="terminal-body bg-[#0f0f0f]">
+            <div id="chat-window" class="p-4 sm:p-5 space-y-3 relative z-10" style="height:430px;overflow-y:auto;"></div>
+            <div class="border-t border-[#1a1a1a] px-4 py-3 flex items-center gap-3 relative z-10 bg-[#0a0a0a]">
+              <span class="text-neutral-600 font-mono text-sm select-none">$</span>
+              <div id="input-label" class="flex-1 font-mono text-sm text-neutral-500 truncate">
+                Ask me to process your videos<span class="cursor"></span>
+              </div>
+              <button class="bg-orange-500 text-black text-xs font-bold px-3 py-1.5 rounded-lg flex-shrink-0">↵</button>
+            </div>
+          </div>
+        </div>
+        <div class="mt-4 flex flex-wrap gap-3 sm:gap-4 text-neutral-600 text-xs font-mono px-1">
+          <span>✓ No account needed</span>
+          <span>✓ No render queue</span>
+          <span>✓ Free to try</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════ TICKER ═══════════════════════════ -->
+<div class="border-t border-b border-[#141414] py-4 overflow-hidden select-none">
+  <div class="ticker-track text-neutral-600 font-mono text-sm gap-10">
+    <span>"trim to 0:30"</span><span class="text-orange-500 mx-2">·</span>
+    <span>"side by side"</span><span class="text-orange-500 mx-2">·</span>
+    <span>"compress for Reels"</span><span class="text-orange-500 mx-2">·</span>
+    <span>"add thumbnail at 2:15"</span><span class="text-orange-500 mx-2">·</span>
+    <span>"convert to MP4"</span><span class="text-orange-500 mx-2">·</span>
+    <span>"slow down by 50%"</span><span class="text-orange-500 mx-2">·</span>
+    <span>"remove audio"</span><span class="text-orange-500 mx-2">·</span>
+    <span>"loop this 3 times"</span><span class="text-orange-500 mx-2">·</span>
+    <span>"extract frames"</span><span class="text-orange-500 mx-2">·</span>
+    <span>"overlay text at bottom"</span><span class="text-orange-500 mx-2">·</span>
+    <!-- duplicate for seamless loop -->
+    <span>"trim to 0:30"</span><span class="text-orange-500 mx-2">·</span>
+    <span>"side by side"</span><span class="text-orange-500 mx-2">·</span>
+    <span>"compress for Reels"</span><span class="text-orange-500 mx-2">·</span>
+    <span>"add thumbnail at 2:15"</span><span class="text-orange-500 mx-2">·</span>
+    <span>"convert to MP4"</span><span class="text-orange-500 mx-2">·</span>
+    <span>"slow down by 50%"</span><span class="text-orange-500 mx-2">·</span>
+    <span>"remove audio"</span><span class="text-orange-500 mx-2">·</span>
+    <span>"loop this 3 times"</span><span class="text-orange-500 mx-2">·</span>
+    <span>"extract frames"</span><span class="text-orange-500 mx-2">·</span>
+    <span>"overlay text at bottom"</span><span class="text-orange-500 mx-2">·</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ FEATURES ═══════════════════════════ -->
+<section id="features" class="py-20 sm:py-28">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6">
+    <div class="mb-12 sm:mb-16 reveal">
+      <p class="text-orange-500 font-mono text-xs uppercase tracking-widest mb-3">Features</p>
+      <h2 class="text-3xl sm:text-4xl font-black text-white mb-3">Just say what you want.</h2>
+      <p class="text-neutral-400 text-base sm:text-lg max-w-xl">
+        VideoValet understands natural language and translates it into FFmpeg — no codec knowledge needed.
+      </p>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div class="feat-card reveal bg-[#0f0f0f] border border-[#1a1a1a] rounded-2xl p-5 sm:p-6">
+        <div class="text-3xl mb-4">✂️</div>
+        <div class="feat-cmd font-mono text-orange-500 text-sm mb-3 transition-colors">"trim to start at 0:30"</div>
+        <h3 class="text-white font-bold text-base mb-2">Trim & Cut</h3>
+        <p class="text-neutral-400 text-sm leading-relaxed">Describe the cut — no scrubbing required.</p>
+      </div>
+      <div class="feat-card reveal bg-[#0f0f0f] border border-[#1a1a1a] rounded-2xl p-5 sm:p-6" style="transition-delay:.05s">
+        <div class="text-3xl mb-4">⬛⬛</div>
+        <div class="feat-cmd font-mono text-orange-500 text-sm mb-3 transition-colors">"put these side by side"</div>
+        <h3 class="text-white font-bold text-base mb-2">Merge & Stack</h3>
+        <p class="text-neutral-400 text-sm leading-relaxed">Concatenate or arrange clips in one sentence.</p>
+      </div>
+      <div class="feat-card reveal bg-[#0f0f0f] border border-[#1a1a1a] rounded-2xl p-5 sm:p-6" style="transition-delay:.1s">
+        <div class="text-3xl mb-4">📦</div>
+        <div class="feat-cmd font-mono text-orange-500 text-sm mb-3 transition-colors">"compress for Instagram"</div>
+        <h3 class="text-white font-bold text-base mb-2">Smart Compression</h3>
+        <p class="text-neutral-400 text-sm leading-relaxed">Right size, right codec — no settings to touch.</p>
+      </div>
+      <div class="feat-card reveal bg-[#0f0f0f] border border-[#1a1a1a] rounded-2xl p-5 sm:p-6" style="transition-delay:.15s">
+        <div class="text-3xl mb-4">🖼</div>
+        <div class="feat-cmd font-mono text-orange-500 text-sm mb-3 transition-colors">"grab thumbnail at 2:15"</div>
+        <h3 class="text-white font-bold text-base mb-2">Thumbnail Extract</h3>
+        <p class="text-neutral-400 text-sm leading-relaxed">Pull any frame at an exact timestamp.</p>
+      </div>
+      <div class="feat-card reveal bg-[#0f0f0f] border border-[#1a1a1a] rounded-2xl p-5 sm:p-6" style="transition-delay:.2s">
+        <div class="text-3xl mb-4">🔄</div>
+        <div class="feat-cmd font-mono text-orange-500 text-sm mb-3 transition-colors">"convert this to MP4"</div>
+        <h3 class="text-white font-bold text-base mb-2">Format Convert</h3>
+        <p class="text-neutral-400 text-sm leading-relaxed">Any format in, any format out. FFmpeg picks the flags.</p>
+      </div>
+      <div class="feat-card reveal bg-[#0f0f0f] border border-[#1a1a1a] rounded-2xl p-5 sm:p-6" style="transition-delay:.25s">
+        <div class="text-3xl mb-4">🐢</div>
+        <div class="feat-cmd font-mono text-orange-500 text-sm mb-3 transition-colors">"slow this down by 50%"</div>
+        <h3 class="text-white font-bold text-base mb-2">Speed Control</h3>
+        <p class="text-neutral-400 text-sm leading-relaxed">Speed up, slow down, or get cinematic slo-mo.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════ HOW IT WORKS ═══════════════════════════ -->
+<section id="how-it-works" class="py-20 sm:py-28 border-t border-[#141414]">
+  <div class="max-w-5xl mx-auto px-4 sm:px-6">
+    <div class="text-center mb-14 sm:mb-20 reveal">
+      <p class="text-orange-500 font-mono text-xs uppercase tracking-widest mb-3">How it works</p>
+      <h2 class="text-3xl sm:text-4xl font-black text-white mb-3">Three steps. That's it.</h2>
+      <p class="text-neutral-400 text-base sm:text-lg">We stripped video editing down to its essentials.</p>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-8 sm:gap-4 relative">
+      <div class="hidden sm:block absolute top-9 left-[calc(16.666%+2rem)] right-[calc(16.666%+2rem)] h-px bg-[#1f1f1f] z-0"></div>
+      <div class="reveal text-center relative z-10">
+        <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-[#111] border border-[#1f1f1f] flex items-center justify-center mx-auto mb-5 text-2xl sm:text-3xl">⬆</div>
+        <p class="text-orange-500 font-mono text-xs uppercase tracking-widest mb-2">Step 01</p>
+        <h3 class="text-white font-bold text-lg mb-2">Drop your files</h3>
+        <p class="text-neutral-400 text-sm leading-relaxed max-w-xs mx-auto">Drag videos onto the page. Upload instantly. No account needed.</p>
+      </div>
+      <div class="reveal text-center relative z-10" style="transition-delay:.1s">
+        <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-[#111] border border-[#1f1f1f] flex items-center justify-center mx-auto mb-5 text-2xl sm:text-3xl">💬</div>
+        <p class="text-orange-500 font-mono text-xs uppercase tracking-widest mb-2">Step 02</p>
+        <h3 class="text-white font-bold text-lg mb-2">Describe the edit</h3>
+        <p class="text-neutral-400 text-sm leading-relaxed max-w-xs mx-auto">Type what you want in plain English. VideoValet handles the FFmpeg.</p>
+      </div>
+      <div class="reveal text-center relative z-10" style="transition-delay:.2s">
+        <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-[#111] border border-[#1f1f1f] flex items-center justify-center mx-auto mb-5 text-2xl sm:text-3xl">⬇</div>
+        <p class="text-orange-500 font-mono text-xs uppercase tracking-widest mb-2">Step 03</p>
+        <h3 class="text-white font-bold text-lg mb-2">Download the result</h3>
+        <p class="text-neutral-400 text-sm leading-relaxed max-w-xs mx-auto">Your processed video is ready in seconds. No rendering queue.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════ CTA ═══════════════════════════ -->
+<section class="py-24 sm:py-32 border-t border-[#141414]">
+  <div class="max-w-2xl mx-auto px-4 sm:px-6 text-center reveal">
+    <h2 class="text-4xl sm:text-5xl font-black text-white leading-tight mb-4">
+      Stop fighting<br>your editor.<br><span class="orange-text">Just talk to it.</span>
+    </h2>
+    <p class="text-neutral-400 text-base sm:text-lg mb-10">Free to use. No signup. Drop your videos and go.</p>
+    <button onclick="pickFiles()"
+            aria-label="Start editing — upload your videos"
+            class="cta-btn inline-flex items-center gap-3 bg-orange-500 text-black font-black text-lg sm:text-xl px-8 sm:px-10 py-4 sm:py-5 rounded-2xl">
+      Start editing now →
+    </button>
+    <p class="mt-8 text-neutral-700 text-sm font-mono">
+      Powered by PicCollage<span class="text-orange-500">.</span> Built for humans.
+    </p>
+  </div>
+</section>
+
+</main>
+
+<!-- FOOTER -->
+<footer class="border-t border-[#141414] py-8">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 flex items-center justify-between">
+    <span class="font-mono font-bold text-neutral-500 text-sm">VideoValet<span class="text-orange-500">.</span></span>
+    <span class="text-neutral-700 text-sm hidden sm:block">The conversational video editor.</span>
+    <button onclick="scrollToDropZone()" aria-label="Scroll to upload area" class="text-orange-500 hover:text-orange-400 text-sm font-mono transition-colors">Try it →</button>
+  </div>
+</footer>
+
+<script>
+// ── Hero terminal animation ──────────────────────────────────────
+const HERO_INPUT_FILES = [
+  { name:'example_video_1.mp4', src:'example_video_1.mp4', thumb:'thumbnail_1.jpg' },
+  { name:'example_video_2.mp4', src:'example_video_2.mp4', thumb:'thumbnail_2.jpg' },
+];
+
+const HERO_MESSAGES = [
+  { type:'files',      files: HERO_INPUT_FILES },
+  { type:'user',       text:'put these two videos side by side' },
+  { type:'bot',        text:'Probing both files…' },
+  { type:'bot',        text:'Both are 688×1024 portrait at ~24fps. Placing them side by side using hstack.' },
+  { type:'bot-output', text:'side_by_side.mp4 · 1376×1024 · ~5s · 1.9 MB', output:{ name:'side_by_side.mp4', thumb:'thumbnail_3.jpg' } },
+  { type:'user',       text:'now compress it and remove the audio' },
+  { type:'bot',        text:'1.9 MB at ~2.9 Mbps. Compressing with CRF 30, slow preset, stripping audio…' },
+  { type:'bot-output', text:'side_by_side_compressed.mp4 · audio removed · ~0.8 MB', output:{ name:'side_by_side_compressed.mp4', thumb:'thumbnail_3.jpg' } },
+];
+
+const chatEl  = document.getElementById('chat-window');
+const inputEl = document.getElementById('input-label');
+let heroIdx   = 0;
+const heroThumbs = {};
+
+function generateHeroThumb(src) {
+  return new Promise(res => {
+    const v = document.createElement('video');
+    v.muted = true; v.playsInline = true; v.preload = 'metadata';
+    v.src = src;
+    const done = (dataUrl) => { heroThumbs[src] = dataUrl; res(dataUrl); };
+    v.addEventListener('seeked', () => {
+      try {
+        const c = document.createElement('canvas');
+        c.width = 160; c.height = 90;
+        c.getContext('2d').drawImage(v, 0, 0, 160, 90);
+        done(c.toDataURL('image/jpeg', 0.75));
+      } catch(e) { done(null); }
+    }, { once: true });
+    v.addEventListener('error', () => done(null), { once: true });
+    v.addEventListener('loadedmetadata', () => { v.currentTime = 0.5; }, { once: true });
+    v.load();
+    setTimeout(() => { if (!heroThumbs[src]) done(null); }, 5000);
+  });
+}
+
+function thumbCard(file) {
+  const thumb = heroThumbs[file.src];
+  const imgHtml = thumb
+    ? `<img src="${thumb}" class="w-full object-cover rounded-t-lg" style="height:52px;object-fit:cover;" />`
+    : `<div class="w-full bg-[#1a1a1a] rounded-t-lg flex items-center justify-center" style="height:52px;"><span class="text-neutral-600 text-lg">🎬</span></div>`;
+  return `<div class="bg-[#111] border border-[#2a2a2a] rounded-lg overflow-hidden flex-shrink-0" style="width:88px;">
+    ${imgHtml}
+    <div class="px-1 py-1 font-mono text-neutral-500 truncate" style="font-size:9px;">${file.name}</div>
+  </div>`;
+}
+
+function typeInput(text, cb) {
+  inputEl.innerHTML = '<span class="cursor"></span>';
+  let i = 0;
+  const t = setInterval(() => {
+    i++;
+    inputEl.innerHTML = text.slice(0, i) + '<span class="cursor"></span>';
+    if (i >= text.length) { clearInterval(t); setTimeout(cb, 400); }
+  }, 46);
+}
+
+function addHeroMsg(msg) {
+  const el = document.createElement('div');
+  if (msg.type === 'files') {
+    el.className = 'flex msg-in justify-start';
+    const cards = msg.files.map(f => thumbCard(f)).join('');
+    el.innerHTML = `<div class="flex gap-2">${cards}</div>`;
+  } else if (msg.type === 'user') {
+    el.className = 'flex msg-in justify-end';
+    el.innerHTML = `<div class="bg-[#1c1c1c] border border-[#2a2a2a] rounded-xl rounded-br-sm px-4 py-2 font-mono text-sm text-neutral-200 max-w-[88%] leading-relaxed">${msg.text}</div>`;
+  } else if (msg.type === 'bot-output') {
+    el.className = 'flex msg-in justify-start';
+    const thumb = msg.output.thumb;
+    el.innerHTML = `<div class="border-l-2 border-orange-500 bg-[#111] rounded-r-xl overflow-hidden max-w-[88%]">
+      ${thumb ? `<img src="${thumb}" class="w-full object-cover" style="height:108px;object-fit:cover;" />` : ''}
+      <div class="px-3 py-2">
+        <div class="font-mono text-xs text-orange-400 font-medium mb-0.5">${msg.output.name}</div>
+        <div class="font-mono text-xs text-neutral-500">${msg.text}</div>
+      </div>
+    </div>`;
+  } else {
+    el.className = 'flex msg-in justify-start';
+    el.innerHTML = `<div class="border-l-2 border-orange-500 bg-[#111] rounded-r-xl px-4 py-2 font-mono text-sm text-neutral-200 max-w-[88%] leading-relaxed whitespace-pre-line">${msg.text}</div>`;
+  }
+  chatEl.appendChild(el);
+  chatEl.scrollTop = chatEl.scrollHeight;
+}
+
+function runHero() {
+  if (heroIdx >= HERO_MESSAGES.length) {
+    setTimeout(() => {
+      chatEl.innerHTML = '';
+      inputEl.innerHTML = 'Ask me to process your videos<span class="cursor"></span>';
+      heroIdx = 0;
+      runHero();
+    }, 3200);
+    return;
+  }
+  const msg = HERO_MESSAGES[heroIdx];
+  if (msg.type === 'files') {
+    addHeroMsg(msg); heroIdx++;
+    setTimeout(runHero, 1000);
+  } else if (msg.type === 'user') {
+    typeInput(msg.text, () => {
+      inputEl.innerHTML = 'Ask me to process your videos<span class="cursor"></span>';
+      addHeroMsg(msg); heroIdx++;
+      setTimeout(runHero, 700);
+    });
+  } else {
+    setTimeout(() => { addHeroMsg(msg); heroIdx++; setTimeout(runHero, 1800); }, 800);
+  }
+}
+
+// Pre-populate heroThumbs from static images (no video seeking needed)
+HERO_INPUT_FILES.forEach(f => { if (f.thumb) heroThumbs[f.src] = f.thumb; });
+setTimeout(runHero, 400);
+
+// ── Scroll reveal ────────────────────────────────────────────────
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } });
+}, { threshold: 0.12 });
+document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+
+// ── File selection ───────────────────────────────────────────────
+let selectedFiles = [];
+
+const dropZone = document.getElementById('drop-zone');
+const fileInput = document.getElementById('file-input');
+
+dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('drag-over');
+  handleFiles(Array.from(e.dataTransfer.files));
+});
+fileInput.addEventListener('change', e => handleFiles(Array.from(e.target.files)));
+
+function pickFiles() { fileInput.click(); }
+
+function scrollToDropZone() {
+  document.getElementById('drop-zone').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  // Briefly highlight it
+  const dz = document.getElementById('drop-zone');
+  dz.style.borderColor = '#f97316';
+  dz.style.boxShadow   = '0 0 32px rgba(249,115,22,0.2)';
+  setTimeout(() => { dz.style.borderColor = ''; dz.style.boxShadow = ''; }, 1200);
+}
+
+function formatBytes(b) {
+  if (b < 1024 * 1024) return (b / 1024).toFixed(1) + ' KB';
+  return (b / 1024 / 1024).toFixed(1) + ' MB';
+}
+
+function handleFiles(files) {
+  const videos = files.filter(f => f.type.startsWith('video/') || /\.(mp4|mov|avi|mkv|webm|m4v)$/i.test(f.name));
+  if (!videos.length) return;
+  selectedFiles = [...selectedFiles, ...videos];
+  renderFileList();
+}
+
+function renderFileList() {
+  const listEl  = document.getElementById('file-list');
+  const itemsEl = document.getElementById('file-list-items');
+  listEl.classList.remove('hidden');
+  dropZone.classList.add('has-files');
+  document.getElementById('dz-icon').textContent  = '✓';
+  document.getElementById('dz-title').textContent = `${selectedFiles.length} video${selectedFiles.length > 1 ? 's' : ''} ready`;
+  document.getElementById('dz-sub').innerHTML     = '<span class="text-green-500">Drop more to add</span>';
+
+  itemsEl.innerHTML = selectedFiles.map((f, i) => `
+    <div class="flex items-center gap-3 bg-[#111] border border-[#1f1f1f] rounded-xl px-4 py-3">
+      <span class="text-xl flex-shrink-0">🎬</span>
+      <div class="flex-1 min-w-0">
+        <div class="text-neutral-200 text-sm font-medium truncate">${f.name}</div>
+        <div class="text-neutral-600 text-xs font-mono">${formatBytes(f.size)}</div>
+      </div>
+      <button onclick="removeFile(${i})" class="text-neutral-700 hover:text-neutral-400 text-xl leading-none flex-shrink-0 transition-colors">×</button>
+    </div>`).join('');
+}
+
+function removeFile(i) {
+  selectedFiles.splice(i, 1);
+  if (!selectedFiles.length) clearFiles();
+  else renderFileList();
+}
+
+function clearFiles() {
+  selectedFiles = [];
+  fileInput.value = '';
+  document.getElementById('file-list').classList.add('hidden');
+  dropZone.classList.remove('has-files');
+  document.getElementById('dz-icon').textContent  = '⬆';
+  document.getElementById('dz-title').textContent = 'Drop your videos here';
+  document.getElementById('dz-sub').innerHTML     = 'or <span class="text-orange-500 group-hover:underline">click to browse files</span>';
+}
+
+// ── IndexedDB helpers ────────────────────────────────────────────
+// Persists File objects across page navigation so app.html can pick them up.
+const IDB_NAME  = 'videovalet_db';
+const IDB_STORE = 'pending_files';
+
+function openIDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(IDB_NAME, 1);
+    req.onupgradeneeded = e => e.target.result.createObjectStore(IDB_STORE, { autoIncrement: true });
+    req.onsuccess  = e => resolve(e.target.result);
+    req.onerror    = () => reject(req.error);
+  });
+}
+
+async function saveFilesToIDB(files) {
+  const db    = await openIDB();
+  const tx    = db.transaction(IDB_STORE, 'readwrite');
+  const store = tx.objectStore(IDB_STORE);
+  // clear previous session
+  store.clear();
+  files.forEach(f => store.add(f));
+  return new Promise((res, rej) => { tx.oncomplete = res; tx.onerror = rej; });
+}
+
+// ── Navigate to editor ───────────────────────────────────────────
+async function startEditing() {
+  if (!selectedFiles.length) return;
+
+  // Show spinner
+  document.getElementById('start-spinner').classList.remove('hidden');
+  document.getElementById('start-label').textContent = 'Opening editor…';
+
+  try {
+    await saveFilesToIDB(selectedFiles);
+  } catch (e) {
+    // IDB unavailable (e.g. file:// with some browsers) — fall back gracefully
+    console.warn('IDB save failed, navigating anyway:', e);
+  }
+
+  window.location.href = 'app.html';
+}
+</script>
+</body>
+</html>

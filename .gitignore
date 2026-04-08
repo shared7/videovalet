@@ -1,0 +1,14 @@
+# Video files — too large for git
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.webm
+
+# System
+.DS_Store
+Thumbs.db
+
+# Superpowers / tooling
+.superpowers/
+.playwright-mcp/
