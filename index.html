@@ -98,8 +98,8 @@
       VideoValet<span class="text-orange-500">.</span>
     </a>
     <div class="flex items-center gap-4 sm:gap-8">
-      <a href="#features"     class="text-neutral-500 hover:text-neutral-200 text-sm transition-colors hidden md:block">Features</a>
-      <a href="#how-it-works" class="text-neutral-500 hover:text-neutral-200 text-sm transition-colors hidden md:block">How it works</a>
+      <a href="#features"     class="text-neutral-400 hover:text-neutral-100 text-sm transition-colors hidden md:block">Features</a>
+      <a href="#how-it-works" class="text-neutral-400 hover:text-neutral-100 text-sm transition-colors hidden md:block">How it works</a>
       <button onclick="pickFiles()"
               aria-label="Try VideoValet — upload your videos"
               class="cta-btn bg-orange-500 text-black font-bold text-sm px-3 sm:px-4 py-2 rounded-lg">
@@ -137,14 +137,15 @@
              aria-label="Drop videos here or click to browse"
              tabindex="0"
              onkeydown="if(event.key==='Enter'||event.key===' ')pickFiles()"
-             class="drop-zone border-2 border-dashed border-[#222] rounded-2xl p-8 sm:p-10 text-center group"
+             class="drop-zone border-2 border-dashed border-[#3a5a8a]/60 rounded-2xl p-8 sm:p-10 text-center group"
              onclick="pickFiles()">
           <div id="dz-icon" class="text-4xl sm:text-5xl mb-4 group-hover:scale-110 transition-transform duration-200">⬆</div>
           <div id="dz-title" class="text-white font-semibold text-base sm:text-lg mb-1">Drop your videos here</div>
-          <div id="dz-sub"   class="text-neutral-500 text-sm">
+
+          <div id="dz-sub"   class="text-neutral-400 text-sm">
             or <span class="text-orange-500 group-hover:underline">click to browse files</span>
           </div>
-          <div class="text-neutral-700 text-xs mt-3 font-mono">MP4 · MOV · AVI · MKV · WEBM</div>
+          <div class="text-neutral-400 text-xs mt-3 font-mono tracking-wide">MP4 · MOV · AVI · MKV · WEBM · GIF</div>
         </div>
 
         <!-- File list (revealed after selection) -->
