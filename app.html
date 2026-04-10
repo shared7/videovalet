@@ -97,10 +97,10 @@
     }
 
     .meta-pill {
-      background: rgba(26,26,26,0.92);
+      background: rgba(36,36,36,0.95);
       backdrop-filter: blur(4px);
-      color: #a3a3a3;
-      font-size: 10px;
+      color: #c8c8c8;
+      font-size: 11px;
       font-family: monospace;
       padding: 2px 6px;
       border-radius: 4px;
@@ -130,7 +130,7 @@
 
     /* ── Tutorial tooltip ────────────────────────── */
     /* ── Input focus ─────────────────────────────── */
-    #chat-input:focus { outline: none; border-color: #f97316; }
+    #chat-input:focus { outline: none; border-color: #f97316; box-shadow: 0 0 0 2px rgba(249,115,22,0.15); }
 
     /* ── Tab buttons ─────────────────────────────── */
     .tab-btn { transition: color 0.15s, border-color 0.15s; -webkit-tap-highlight-color: transparent; }
@@ -164,7 +164,7 @@
 </head>
 <body class="flex flex-col" style="height:100dvh">
 
-<input type="file" id="file-input" accept="video/*,.mp4,.mov,.avi,.mkv,.webm" multiple class="hidden" />
+<input type="file" id="file-input" accept="video/*,image/*,.mp4,.mov,.avi,.mkv,.webm,.gif,.jpg,.jpeg,.png,.webp" multiple class="hidden" />
 
 <!-- ═══════════════════════════════════════════
      HEADER
@@ -177,15 +177,15 @@
     <span class="w-3 h-3 rounded-full bg-[#28c840]"></span>
   </div>
 
-  <a href="index.html" class="text-neutral-600 hover:text-neutral-400 transition-colors text-sm font-mono hidden sm:block">← back</a>
+  <a href="index.html" class="text-neutral-500 hover:text-neutral-300 transition-colors text-sm font-mono hidden sm:block">← back</a>
   <span class="w-px h-4 bg-[#2a2a2a] hidden sm:block"></span>
 
   <span class="font-mono font-bold text-white text-sm">VideoValet<span class="text-orange-500">.</span></span>
-  <span class="text-neutral-700 text-xs font-mono hidden sm:block">— editor</span>
+  <span class="text-neutral-500 text-xs font-mono hidden sm:block">— editor</span>
 
   <div class="flex-1"></div>
 
-  <span id="header-count" class="text-neutral-700 text-xs font-mono hidden sm:block"></span>
+  <span id="header-count" class="text-neutral-500 text-xs font-mono hidden sm:block"></span>
 </header>
 
 <!-- Mobile tabs -->
@@ -196,7 +196,7 @@
   <button id="tab-files-btn"
           class="tab-btn flex-1 py-3 text-sm font-mono border-b-2 border-transparent text-neutral-500"
           onclick="switchTab('files')">
-    Files <span id="mobile-count" class="text-xs text-neutral-600 ml-1"></span>
+    Files <span id="mobile-count" class="text-xs text-neutral-400 ml-1"></span>
   </button>
 </div>
 
@@ -218,7 +218,7 @@
       <div class="flex gap-2">
         <input id="chat-input" type="text"
                placeholder='e.g. "trim video 1 to 0:30"'
-               class="flex-1 bg-[#111] border border-[#222] rounded-xl px-4 py-3 text-sm text-neutral-200 font-mono placeholder-neutral-700 transition-colors"
+               class="flex-1 bg-[#111] border border-[#3a3a3a] rounded-xl px-4 py-3.5 text-sm text-neutral-200 font-mono placeholder-neutral-500 transition-colors"
                onkeydown="if(event.key==='Enter')sendMessage()"
 
                autocomplete="off"
@@ -226,8 +226,8 @@
                autocapitalize="off"
                spellcheck="false" />
         <button onclick="sendMessage()"
-                class="bg-orange-500 active:bg-orange-600 text-black font-bold text-sm px-4 py-3 rounded-xl transition-colors flex-shrink-0 touch-manipulation">
-          ↵
+                class="bg-orange-500 active:bg-orange-600 text-black font-bold text-sm px-5 py-3.5 rounded-xl transition-colors flex-shrink-0 touch-manipulation flex items-center gap-1.5">
+          <span>Send</span><span class="opacity-60 text-xs">↵</span>
         </button>
       </div>
     </div>
@@ -240,7 +240,7 @@
     <div class="flex items-center justify-between px-4 py-3 border-b border-[#1a1a1a] flex-shrink-0">
       <div>
         <h2 class="text-white font-bold text-base leading-none">Files</h2>
-        <p class="text-neutral-600 text-xs mt-0.5 font-mono">Tap to select · use numbers to reference</p>
+        <p class="text-neutral-400 text-xs mt-0.5 font-mono">Tap to select · use numbers to reference</p>
       </div>
       <div class="flex items-center gap-2">
         <span id="selected-badge" class="hidden text-orange-500 text-xs font-mono bg-orange-500/10 border border-orange-500/20 px-2 py-1 rounded-lg"></span>
@@ -265,8 +265,9 @@
         </div>
         <!-- Thumb -->
         <div id="output-thumb-wrap" class="relative bg-black">
-          <img id="output-thumb" src="" alt="" class="w-full max-h-48 sm:max-h-52 object-contain" />
-          <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <img id="output-thumb" src="" alt="" class="w-full max-h-48 sm:max-h-52 object-contain hidden" />
+          <video id="output-video" class="hidden w-full" style="max-height:12rem" controls playsinline preload="metadata"></video>
+          <div id="output-play-icon" class="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div class="w-12 h-12 rounded-full bg-black/50 backdrop-blur flex items-center justify-center border border-white/10">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="#f97316"><polygon points="5 3 19 12 5 21 5 3"/></svg>
             </div>
@@ -303,8 +304,8 @@
           <div id="progress-bar" class="progress-glow bg-orange-500 h-full rounded-full transition-all duration-300" style="width:0%"></div>
         </div>
         <div class="flex justify-between mt-1.5">
-          <span class="text-neutral-700 text-xs font-mono" id="progress-step"></span>
-          <span id="progress-pct" class="text-neutral-600 text-xs font-mono">0%</span>
+          <span class="text-neutral-500 text-xs font-mono" id="progress-step"></span>
+          <span id="progress-pct" class="text-neutral-400 text-xs font-mono">0%</span>
         </div>
       </div>
 
@@ -328,7 +329,7 @@ const IDB_NAME  = 'videovalet_db';
 const IDB_STORE = 'pending_files';
 const LARGE_FILE_BYTES = 50 * 1024 * 1024; // 50 MB
 
-const ANTHROPIC_API_KEY = 'YOUR_ANTHROPIC_API_KEY_HERE' // ⚠️ Replace with your own key from console.anthropic.com;
+const ANTHROPIC_API_KEY = 'YOUR_ANTHROPIC_API_KEY_HERE';
 const KITTY_API = 'https://ai-kitty.web-cardinalblue.workers.dev';
 
 // Demo files — pre-set thumbnails so no video seeking needed
@@ -359,9 +360,128 @@ function formatDur(sec) {
   const m = Math.floor(sec/60), s = Math.floor(sec%60);
   return `${m}:${s.toString().padStart(2,'0')}`;
 }
+function buildAnalysisText(files, command) {
+  const q = (command || '').toLowerCase();
+  const f0 = files[0], f1 = files[1];
+  const m0 = f0 && f0.meta, m1 = f1 && f1.meta;
+
+  const isCombine  = q.includes('side by side') || q.includes('side-by-side') || q.includes('split screen') || q.includes('next to') || q.includes('hstack');
+  const isConcat   = !isCombine && (q.includes(' after') || q.includes('concat') || q.includes('one after') || q.includes('back to back') || q.includes('end to end') || q.includes('join') || q.includes('merge') || q.includes('together') || q.includes('combine') || q.includes('sequential'));
+  const isTrim     = q.includes('trim') || q.includes('cut') || /\d+:\d+/.test(q) || q.includes('start at') || q.includes('from ');
+  const isGif      = q.includes('gif') || q.includes('animated') || q.includes('animation');
+  const isCompress = q.includes('compress') || q.includes('smaller') || q.includes('optimize') || q.includes('instagram') || q.includes('reels');
+  const isConvert  = !isGif && (q.includes('convert') || q.includes('to mp4') || q.includes('to webm') || q.includes('to mov'));
+
+  const lines = [];
+
+  if (files.length >= 2 && (isCombine || isConcat)) {
+    const dur0 = m0 && m0.duration ? formatDur(m0.duration) : null;
+    const dur1 = m1 && m1.duration ? formatDur(m1.duration) : null;
+    const sameLen = m0 && m1 && m0.duration && m1.duration && Math.abs(m0.duration - m1.duration) < 1;
+
+    if (isCombine) {
+      if (sameLen && dur0) lines.push(`Both clips are ${dur0} — they'll play in perfect sync.`);
+      else if (dur0 && dur1) lines.push(`Clips are ${dur0} and ${dur1} — output will be as long as the shorter one.`);
+
+      if (m0 && m1 && m0.height && m1.height) {
+        if (m0.height !== m1.height) lines.push(`Heights don't match (${m0.height}px vs ${m1.height}px) — I'll scale both to 720px tall before stacking. Width adjusts to keep aspect ratio.`);
+        else lines.push(`Same height (${m0.height}px) — can stack directly, no scaling needed.`);
+      }
+      if (m0 && m1 && m0.fps && m1.fps && m0.fps !== m1.fps) {
+        lines.push(`Frame rates differ (${m0.fps}fps vs ${m1.fps}fps) — normalizing to ${Math.max(m0.fps, m1.fps)}fps.`);
+      } else if (m0 && m0.fps) {
+        lines.push(`Both at ${m0.fps}fps — no frame-rate sync needed.`);
+      }
+    } else {
+      const total = m0 && m1 && m0.duration && m1.duration ? m0.duration + m1.duration : null;
+      if (dur0 && dur1 && total) lines.push(`Joining ${dur0} + ${dur1} end-to-end — output will be ~${formatDur(total)}.`);
+      else lines.push(`Joining ${files.length} clips sequentially.`);
+
+      if (m0 && m1 && m0.width && m1.width && (m0.width !== m1.width || m0.height !== m1.height)) {
+        lines.push(`Different sizes (${m0.width}×${m0.height} vs ${m1.width}×${m1.height}) — I'll scale to a common size before joining.`);
+      } else if (m0 && m0.width) {
+        lines.push(`Both at ${m0.width}×${m0.height} — dimensions match, no scaling needed.`);
+      }
+    }
+
+  } else if (isTrim) {
+    if (m0 && m0.duration) lines.push(`Source is ${formatDur(m0.duration)} long — trimming with stream copy. No re-encode means it's lossless and fast, output will be smaller.`);
+    else lines.push(`Trimming with stream copy — lossless, no re-encode, fast.`);
+
+  } else if (isGif) {
+    if (m0 && m0.duration && m0.fps) lines.push(`Converting this ${formatDur(m0.duration)} clip (${m0.fps}fps source) to GIF — down-sampling to 12fps and scaling to 480px wide to keep the file compact.`);
+    else if (m0 && m0.duration) lines.push(`Converting ${formatDur(m0.duration)} of video to an animated GIF at 12fps, 480px wide.`);
+    else lines.push(`Converting to animated GIF — scaling to 480px wide at 12fps.`);
+
+  } else if (isCompress) {
+    if (m0 && m0.width && f0.file && f0.file.size) {
+      lines.push(`${m0.width}×${m0.height} source at ${formatBytes(f0.file.size)} — re-encoding with CRF 28 and fast preset. Expect 40–60% size reduction while keeping visually good quality.`);
+    } else lines.push(`Re-encoding at CRF 28 — good quality, significantly smaller file.`);
+
+  } else if (isConvert) {
+    const fromExt = f0 && (f0.file.name.split('.').pop() || '').toUpperCase();
+    if (m0 && m0.width) lines.push(`${fromExt} source at ${m0.width}×${m0.height}${m0.duration ? ', ' + formatDur(m0.duration) : ''} — re-encoding with yuv420p for broad compatibility.`);
+    else lines.push(`Converting from ${fromExt || 'source format'} — re-encoding for compatibility.`);
+
+  } else if (files.length === 1 && f0) {
+    const parts = [];
+    if (m0 && m0.width) parts.push(`${m0.width}×${m0.height}`);
+    if (m0 && m0.fps) parts.push(`${m0.fps}fps`);
+    if (m0 && m0.duration) parts.push(formatDur(m0.duration));
+    if (f0.file && f0.file.size) parts.push(formatBytes(f0.file.size));
+    if (parts.length) lines.push(`Source: ${parts.join(' · ')} — working out the best approach.`);
+
+  } else if (files.length >= 2) {
+    const total = m0 && m1 && m0.duration && m1.duration ? formatDur(m0.duration + m1.duration) : null;
+    lines.push(total ? `${files.length} clips, ~${total} total — figuring out the plan.` : `${files.length} files — working out the plan.`);
+  }
+
+  return lines.join('<br>');
+}
+function buildRunningText(plan) {
+  const tag = s => `<code class="bg-[#1a2a1a] px-1 rounded text-green-400 text-xs">${s}</code>`;
+  const p = (plan.ffmpegParams || []).join(' ');
+  const out = plan.outputFile || 'output.mp4';
+
+  if (p.includes('hstack'))
+    return `Running ${tag('hstack')} — joining clips side by side…`;
+  if (p.includes('scale') && p.includes('vstack'))
+    return `Scaling and stacking with ${tag('vstack')}…`;
+  if (p.includes('vstack'))
+    return `Running ${tag('vstack')} — stacking clips vertically…`;
+  if (p.includes('concat'))
+    return `Running ${tag('concat')} filter — joining clips end to end…`;
+  if (p.includes('-ss') && p.includes('copy'))
+    return `Trimming with ${tag('-ss')} / ${tag('-to')} and stream copy — no re-encode, fast cut…`;
+  if (p.includes('-ss'))
+    return `Trimming to specified range…`;
+  if (p.includes('crf') || p.includes('libx264') || p.includes('libx265'))
+    return `Re-encoding with ${tag('libx264')} — compressing to ${out}…`;
+  if (p.includes('overlay'))
+    return `Compositing with ${tag('overlay')} filter…`;
+  if (p.includes('scale'))
+    return `Scaling video with ${tag('scale')} filter…`;
+  if (p.includes('atempo') || p.includes('setpts'))
+    return `Adjusting speed with ${tag('setpts')} / ${tag('atempo')}…`;
+  if (p.includes('-an'))
+    return `Stripping audio track…`;
+  if (p.includes('volume') || p.includes('afilter'))
+    return `Adjusting audio levels…`;
+  if (p.includes('transpose') || p.includes('vflip') || p.includes('hflip'))
+    return `Rotating / flipping with ${tag('transpose')} filter…`;
+  if (p.includes('stream_loop'))
+    return `Looping video with ${tag('stream_loop')}…`;
+  if (p.includes('-vframes'))
+    return `Extracting frame with ${tag('-vframes 1')}…`;
+  const firstSentence = (plan.explanation || '').replace(/<[^>]+>/g, '').split(/[.!?]/)[0];
+  return firstSentence ? firstSentence + '…' : `Running FFmpeg on ${out}…`;
+}
 function detectCodec(name) {
   const ext = (name.split('.').pop()||'').toLowerCase();
-  return ({mp4:'H264',m4v:'H264',mov:'H264',mkv:'H264',avi:'AVI',webm:'VP9',flv:'FLV',wmv:'WMV'})[ext]||'Video';
+  return ({mp4:'H264',m4v:'H264',mov:'H264',mkv:'H264',avi:'AVI',webm:'VP9',flv:'FLV',wmv:'WMV',gif:'GIF',jpg:'JPEG',jpeg:'JPEG',png:'PNG',webp:'WebP',bmp:'BMP',tiff:'TIFF',tif:'TIFF'})[ext]||'Video';
+}
+function isImageFile(name) {
+  return /\.(gif|jpe?g|png|webp|bmp|tiff?)$/i.test(name);
 }
 function scrollChat() {
   const el = document.getElementById('chat-messages');
@@ -397,32 +517,64 @@ function generateThumb(file) {
   return new Promise(resolve => {
     if (!(file instanceof File)) { resolve({thumb:null,url:null,meta:null}); return; }
     const url   = URL.createObjectURL(file);
+    let settled = false;
     const video = document.createElement('video');
     video.muted=true; video.preload='metadata'; video.src=url;
     video.addEventListener('loadedmetadata',()=>{
-      const meta = { width:video.videoWidth, height:video.videoHeight, duration:video.duration };
+      const meta = { width:video.videoWidth, height:video.videoHeight, duration:video.duration, fps: null };
       video.currentTime = Math.min(1, video.duration*0.1);
       video.addEventListener('seeked',()=>{
         try {
           const w=320, h=Math.round(320*video.videoHeight/(video.videoWidth||320));
           const c=document.createElement('canvas'); c.width=w; c.height=h||180;
           c.getContext('2d').drawImage(video,0,0,c.width,c.height);
-          resolve({thumb:c.toDataURL('image/jpeg',0.75),url,meta});
+          const thumb = c.toDataURL('image/jpeg',0.75);
+          if ('requestVideoFrameCallback' in HTMLVideoElement.prototype) {
+            let t0 = null, frames = 0;
+            const probe = (now) => {
+              if (t0 === null) { t0 = now; video.requestVideoFrameCallback(probe); return; }
+              frames++;
+              const elapsed = (now - t0) / 1000;
+              if (elapsed < 0.5 && frames < 20) {
+                video.requestVideoFrameCallback(probe);
+              } else {
+                meta.fps = elapsed > 0 ? Math.round(frames / elapsed) : null;
+                video.pause();
+                settled = true;
+                resolve({thumb, url, meta});
+              }
+            };
+            video.requestVideoFrameCallback(probe);
+            video.play().catch(()=>{
+              meta.fps = null;
+              settled = true;
+              resolve({thumb, url, meta});
+            });
+          } else {
+            settled = true;
+            resolve({thumb, url, meta});
+          }
         } catch { resolve({thumb:null,url,meta}); }
       },{once:true});
     },{once:true});
-    video.addEventListener('error',()=>resolve({thumb:null,url:null,meta:null}));
-    setTimeout(()=>resolve({thumb:null,url:null,meta:null}),7000);
+    video.addEventListener('error',()=>{ if (!settled) { video.pause(); video.src=''; URL.revokeObjectURL(url); resolve({thumb:null,url:null,meta:null}); } });
+    setTimeout(()=>{ if (!settled) { video.pause(); video.src=''; URL.revokeObjectURL(url); resolve({thumb:null,url:null,meta:null}); } },7000);
     video.load();
   });
 }
 
 // Generates a thumbnail from a plain URL (for demo files served locally)
 function generateThumbFromUrl(src) {
+  // Fetch as blob first to avoid canvas CORS taint issues with remote URLs
+  return fetch(src).then(r => r.blob()).then(blob => {
+    const blobUrl = URL.createObjectURL(blob);
+    return _generateThumbFromBlobUrl(blobUrl).finally(() => URL.revokeObjectURL(blobUrl));
+  }).catch(() => ({ thumb: null, meta: null, size: 0 }));
+}
+function _generateThumbFromBlobUrl(src) {
   return new Promise(resolve => {
     const video = document.createElement('video');
     video.muted = true; video.preload = 'metadata';
-    video.crossOrigin = 'anonymous';
     video.src = src;
     video.addEventListener('loadedmetadata', () => {
       const meta = { width: video.videoWidth, height: video.videoHeight, duration: video.duration };
@@ -482,6 +634,7 @@ function buildCard(f, i) {
   const pills     = [];
   if (meta) {
     if (meta.width && meta.height) pills.push(`${meta.width}×${meta.height}`);
+    if (meta.fps) pills.push(`${meta.fps}fps`);
     const dur = formatDur(meta.duration);
     if (dur) pills.push(dur);
     pills.push(detectCodec(file.name));
@@ -510,18 +663,20 @@ function buildCard(f, i) {
     : '';
 
   return `
-    <div class="file-card${selected?' selected':''} bg-[#111] rounded-2xl overflow-hidden border ${f.isOutput?'border-green-900/50':'border-[#1a1a1a]'}"
+    <div class="file-card${selected?' selected':''} bg-[#111] rounded-2xl overflow-hidden border ${f.isOutput?'border-green-900/50':'border-[#2c2c2c]'}"
          onclick="toggleSelect(${i})">
       <div class="relative overflow-hidden" style="min-height:80px;max-height:160px">
         ${thumbArea}
         ${loadingOverlay}
         <!-- selector -->
         <div class="absolute top-2 left-2"><div class="selector-ring">${check}</div></div>
-        <!-- play -->
-        <div class="absolute inset-0 flex items-center justify-center"
-             onclick="playFile(event,${i})" style="cursor:pointer">
-          <div class="w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center border border-white/10 hover:bg-black/60 transition-colors">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        <!-- play / view -->
+        <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div class="w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center border border-white/10 hover:bg-black/60 transition-colors pointer-events-auto"
+               onclick="playFile(event,${i})" style="cursor:pointer">
+            ${isImageFile(file.name)
+              ? `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3" fill="white" stroke="none"/></svg>`
+              : `<svg width="13" height="13" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3"/></svg>`}
           </div>
         </div>
         <!-- number / output badge -->
@@ -531,17 +686,17 @@ function buildCard(f, i) {
         }
       </div>
       <div class="p-2">
-        <div class="text-neutral-200 text-xs font-semibold truncate mb-1" title="${file.name}">${file.name}</div>
+        <div class="text-neutral-100 text-xs font-semibold truncate mb-1" title="${file.name}">${file.name}</div>
         <div class="flex flex-wrap gap-1 mb-1">${pillsHtml}</div>
         ${isLarge ? `<div class="mb-1"><span class="large-file-badge">⏳ Large file</span></div>` : ''}
         <div class="flex gap-1 mt-1.5">
           <button onclick="downloadFile(event,${i})"
-                  class="flex items-center justify-center w-9 h-9 bg-[#1a1a1a] active:bg-[#2a2a2a] rounded-xl text-neutral-400 active:text-white touch-manipulation"
+                  class="flex items-center justify-center w-9 h-9 bg-[#222] active:bg-[#2a2a2a] rounded-xl text-neutral-300 active:text-white touch-manipulation"
                   title="Download">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
           </button>
           <button onclick="removeFile(event,${i})"
-                  class="flex items-center justify-center w-9 h-9 bg-[#1a1a1a] active:bg-red-900/40 rounded-xl text-neutral-400 active:text-red-400 touch-manipulation"
+                  class="flex items-center justify-center w-9 h-9 bg-[#222] active:bg-red-900/40 rounded-xl text-neutral-300 active:text-red-400 touch-manipulation"
                   title="Remove">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
           </button>
@@ -637,24 +792,61 @@ function showOutput(cmd) {
   addOutputToGrid(outName, thumbSrc, srcUrl);
 }
 
-function addOutputToGrid(name, thumb, url) {
-  // Remove any previous output entries to avoid clutter
-  appFiles = appFiles.filter(f => !f.isOutput);
+function addOutputToGrid(name, thumb, url, backendName = null, realFile = null, outputMeta = null) {
+  // Deselect everything so next command defaults to this new output
+  appFiles.forEach(f => f.selected = false);
 
-  // Fake File-like object with the right name/size
-  const fakeFile = { name, size: Math.round(4.8 * 1024 * 1024) };
-  appFiles.push({
-    file:    fakeFile,
-    thumb:   thumb,
-    url:     url,
-    meta:    { width: 1080, height: 1920, duration: 20 },
-    selected: false,
-    isDemo:   false,
-    isOutput: true,
-    color:   '#1a2010',
-    loading:  false,
-  });
+  const fileObj = realFile || { name, size: Math.round(4.8 * 1024 * 1024) };
+  const entry = {
+    file:        fileObj,
+    thumb:       thumb,
+    url:         url,
+    meta:        outputMeta || null,
+    selected:    true,
+    isDemo:      false,
+    isOutput:    true,
+    backendName: backendName,
+    color:       '#1a2010',
+    loading:     !!url && !thumb,
+  };
+  appFiles.push(entry);
   renderGrid();
+
+  // Generate thumbnail from the output URL (video or image)
+  if (url && !thumb) {
+    const ext = (name.split('.').pop() || '').toLowerCase();
+    const isImg = ['jpg','jpeg','png','gif','webp','bmp','tif','tiff'].includes(ext);
+    if (isImg) {
+      fetch(url).then(r => r.blob()).then(blob => {
+        const blobUrl = URL.createObjectURL(blob);
+        const probe = new Image();
+        probe.onload = () => {
+          if (!entry.meta) entry.meta = { width: probe.naturalWidth, height: probe.naturalHeight, duration: null, fps: null };
+          entry.thumb = blobUrl;
+          if (!entry.url || entry.url === url) entry.url = blobUrl;
+          entry.loading = false;
+          renderGrid();
+        };
+        probe.onerror = () => {
+          entry.thumb = blobUrl;
+          entry.loading = false;
+          renderGrid();
+        };
+        probe.src = blobUrl;
+      }).catch(() => {
+        entry.thumb = url;
+        entry.loading = false;
+        renderGrid();
+      });
+    } else {
+      generateThumbFromUrl(url).then(({ thumb: t, meta: m }) => {
+        if (t) entry.thumb = t;
+        if (m) entry.meta = m;
+        entry.loading = false;
+        renderGrid();
+      }).catch(() => { entry.loading = false; renderGrid(); });
+    }
+  }
 }
 
 async function shareOutput() {
@@ -679,6 +871,12 @@ async function shareOutput() {
 
 function dismissOutput() {
   document.getElementById('output-section').classList.add('hidden');
+  const v = document.getElementById('output-video');
+  if (v) { v.pause(); v.src = ''; v.classList.add('hidden'); }
+  const img = document.getElementById('output-thumb');
+  if (img) { img.src = ''; img.classList.add('hidden'); }
+  const playIcon = document.getElementById('output-play-icon');
+  if (playIcon) playIcon.classList.remove('hidden');
 }
 
 // Used at the end of the demo sequence — loads the real compressed file
@@ -789,20 +987,128 @@ function addBotMsg(html) {
   el.innerHTML=`<div style="background:#0f1a0f;border:1px solid #1a2e1a;border-radius:4px 18px 18px 18px;" class="px-4 py-3 text-sm text-neutral-200 max-w-[92%] leading-relaxed">${html}</div>`;
   document.getElementById('chat-messages').appendChild(el); scrollChat();
 }
-function addThinkingMsg() {
+function addThinkingMsg(initialText = 'Thinking…') {
   const el=document.createElement('div');
   el.id='thinking-msg';
   el.className='msg-in flex justify-start';
-  el.innerHTML=`<div style="background:#0f1a0f;border:1px solid #1a2e1a;border-radius:4px 18px 18px 18px;" class="px-4 py-2.5 text-sm text-neutral-500 flex items-center gap-2">
+  el.innerHTML=`<div id="thinking-inner" style="background:#0f1a0f;border:1px solid #1a2e1a;border-radius:4px 18px 18px 18px;" class="px-4 py-2.5 text-sm text-neutral-400 flex items-center gap-2">
     <svg class="spinner w-3 h-3 text-green-600 flex-shrink-0" fill="none" viewBox="0 0 24 24">
       <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
       <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-    </svg>Processing…</div>`;
+    </svg><span id="thinking-text">${initialText}</span></div>`;
   document.getElementById('chat-messages').appendChild(el); scrollChat();
+}
+function setThinkingText(msg) {
+  const el = document.getElementById('thinking-text');
+  if (el) el.textContent = msg;
+}
+
+function addAnalysisMsg(html) {
+  const t = document.getElementById('thinking-msg');
+  if (t) t.remove();
+  const el = document.createElement('div');
+  el.className = 'msg-in flex justify-start';
+  el.innerHTML = `<div style="background:#0a150a;border:1px solid #1a2e1a;border-radius:4px 18px 18px 18px;font-family:monospace;font-size:0.8rem;line-height:1.7;" class="px-4 py-3 text-neutral-300 max-w-[92%]">${html}</div>`;
+  document.getElementById('chat-messages').appendChild(el);
+  scrollChat();
+}
+
+function addRunningMsg(html) {
+  const existing = document.getElementById('running-msg');
+  if (existing) existing.remove();
+  const el = document.createElement('div');
+  el.id = 'running-msg';
+  el.className = 'msg-in flex justify-start';
+  el.innerHTML = `<div style="background:#0f1a0f;border:1px solid #1a2e1a;border-radius:4px 18px 18px 18px;" class="px-4 py-2.5 text-sm text-neutral-500 flex items-center gap-2">
+    <svg class="spinner w-3 h-3 text-green-600 flex-shrink-0" fill="none" viewBox="0 0 24 24">
+      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+    </svg><span>${html}</span></div>`;
+  document.getElementById('chat-messages').appendChild(el);
+  scrollChat();
 }
 
 // ════════════════════════════════════════════════
 //  CLIENT-SIDE VIDEO PROCESSING (multi-input ops)
+// ════════════════════════════════════════════════
+
+// Sequential concat: plays file1 then file2 on canvas, MediaRecorder captures
+async function clientSideConcat(file1, file2) {
+  return new Promise(async (resolve, reject) => {
+    const v1 = document.createElement('video');
+    const v2 = document.createElement('video');
+    const url1 = URL.createObjectURL(file1);
+    const url2 = URL.createObjectURL(file2);
+    v1.src = url1; v2.src = url2;
+    v1.muted = v2.muted = true;
+    v1.preload = v2.preload = 'auto';
+
+    await Promise.all([
+      new Promise(r => { v1.onloadedmetadata = r; }),
+      new Promise(r => { v2.onloadedmetadata = r; })
+    ]);
+
+    const targetH = Math.min(720, Math.max(v1.videoHeight, v2.videoHeight));
+    const w1 = Math.round(v1.videoWidth * (targetH / v1.videoHeight) / 2) * 2;
+    const w2 = Math.round(v2.videoWidth * (targetH / v2.videoHeight) / 2) * 2;
+    const targetW = Math.max(w1, w2);
+    const totalDuration = v1.duration + v2.duration;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = targetW; canvas.height = targetH;
+    const ctx = canvas.getContext('2d');
+
+    const mimeType = ['video/mp4', 'video/webm;codecs=vp9', 'video/webm'].find(m => MediaRecorder.isTypeSupported(m)) || 'video/webm';
+    const ext = mimeType.startsWith('video/mp4') ? 'mp4' : 'webm';
+
+    const stream = canvas.captureStream(30);
+    const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 4000000 });
+    const chunks = [];
+    let canvasThumb = null;
+
+    recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+    recorder.onstop = () => {
+      const blob = new Blob(chunks, { type: mimeType });
+      URL.revokeObjectURL(url1); URL.revokeObjectURL(url2);
+      resolve({ blobUrl: URL.createObjectURL(blob), ext, thumb: canvasThumb, width: targetW, height: targetH, duration: totalDuration });
+    };
+    recorder.onerror = e => reject(new Error('Recording failed: ' + e.error));
+
+    recorder.start(200);
+
+    let currentVideo = v1;
+    let switchedToV2 = false;
+    await v1.play().catch(() => {});
+
+    function drawFrame() {
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      if (currentVideo.readyState >= 2) {
+        const cw = currentVideo === v1 ? w1 : w2;
+        const cx = Math.round((targetW - cw) / 2);
+        ctx.drawImage(currentVideo, cx, 0, cw, targetH);
+      }
+      if (!canvasThumb && currentVideo.readyState >= 2) {
+        try { canvasThumb = canvas.toDataURL('image/jpeg', 0.75); } catch(e) {}
+      }
+      const elapsed = currentVideo === v1 ? v1.currentTime : v1.duration + v2.currentTime;
+      setRealProgress(25 + Math.min((elapsed / totalDuration) * 70, 70), 'Rendering frames…');
+      setThinkingText(`Rendering frames… ${Math.round(Math.min(elapsed / totalDuration * 100, 99))}%`);
+
+      if (currentVideo === v1 && v1.ended && !switchedToV2) {
+        switchedToV2 = true;
+        currentVideo = v2;
+        v2.currentTime = 0;
+        v2.play().catch(() => {});
+      }
+      if (currentVideo === v2 && v2.ended) { recorder.stop(); return; }
+      requestAnimationFrame(drawFrame);
+    }
+    requestAnimationFrame(drawFrame);
+  });
+}
+
+// ════════════════════════════════════════════════
 // ════════════════════════════════════════════════
 async function clientSideSideBySide(file1, file2) {
   return new Promise(async (resolve, reject) => {
@@ -838,12 +1144,13 @@ async function clientSideSideBySide(file1, file2) {
     const stream = canvas.captureStream(30);
     const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 4000000 });
     const chunks = [];
+    let canvasThumb = null;
 
     recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
     recorder.onstop = () => {
       const blob = new Blob(chunks, { type: mimeType });
       URL.revokeObjectURL(url1); URL.revokeObjectURL(url2);
-      resolve({ blobUrl: URL.createObjectURL(blob), ext });
+      resolve({ blobUrl: URL.createObjectURL(blob), ext, thumb: canvasThumb, width: canvas.width, height: canvas.height, duration });
     };
     recorder.onerror = e => reject(new Error('Recording failed: ' + e.error));
 
@@ -856,8 +1163,14 @@ async function clientSideSideBySide(file1, file2) {
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       if (v1.readyState >= 2) ctx.drawImage(v1, 0, 0, w1, targetH);
       if (v2.readyState >= 2) ctx.drawImage(v2, w1, 0, w2, targetH);
+      // Capture first meaningful frame as thumbnail
+      if (!canvasThumb && (v1.readyState >= 2 || v2.readyState >= 2)) {
+        try { canvasThumb = canvas.toDataURL('image/jpeg', 0.75); } catch(e) {}
+      }
       const elapsed = Math.max(v1.currentTime, v2.currentTime);
       setRealProgress(25 + Math.min((elapsed / duration) * 70, 70), 'Rendering frames…');
+      const pct = Math.round(Math.min((elapsed / duration) * 100, 99));
+      setThinkingText(`Rendering frames… ${pct}%`);
       if (v1.ended && v2.ended) { recorder.stop(); }
       else { requestAnimationFrame(drawFrame); }
     }
@@ -884,7 +1197,22 @@ async function uploadFileToSession(sid, file) {
   return res.json();
 }
 
-async function askClaude(command, fileNames) {
+async function askClaude(command, fileNames, fileMeta = {}) {
+  // Build rich file descriptions with metadata
+  const fileDescriptions = fileNames.map(name => {
+    const m = fileMeta[name];
+    if (!m) return name;
+    const parts = [name + ':'];
+    if (m.width && m.height) parts.push(`${m.width}×${m.height}`);
+    if (m.fps) parts.push(`${Math.round(m.fps)}fps`);
+    if (m.duration) parts.push(`~${formatDur(m.duration)} duration`);
+    if (m.size) parts.push(formatBytes(m.size));
+    const ext = (name.split('.').pop() || '').toLowerCase();
+    if (['jpg','jpeg','png','webp','gif'].includes(ext)) parts.push('image/' + ext.toUpperCase());
+    else parts.push(detectCodec(name));
+    return parts.join(' ');
+  }).join('\n- ');
+
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -895,62 +1223,102 @@ async function askClaude(command, fileNames) {
     },
     body: JSON.stringify({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 1024,
-      system: `You are a video processing assistant. Translate natural language video editing commands into FFmpeg parameters.
+      max_tokens: 2000,
+      system: `You are VideoValet, an AI video editor. The user may send an FFmpeg command OR a question/follow-up comment.
 
-Given a user command and available video filenames, respond ONLY with a JSON object:
+ALWAYS respond with ONLY a JSON object — no markdown, no code fences, no prose outside JSON.
+
+If the user is giving a VIDEO PROCESSING COMMAND, respond with:
 {
-  "inputFile": "primary input filename from the list",
-  "ffmpegParams": ["ffmpeg", "flags", "as", "strings"],
-  "outputFile": "descriptive-output-name.mp4",
-  "explanation": "One sentence explaining what you're doing"
+  "type": "command",
+  "inputFile": "primary input filename",
+  "ffmpegParams": ["array", "of", "ffmpeg", "flags"],
+  "outputFile": "output-name.ext",
+  "explanation": "2-4 sentence HTML explanation of what you observed and what you did"
 }
 
-Rules:
-- inputFile: the main input file (will be prepended as -i <inputFile> automatically — DO NOT include it again in ffmpegParams)
-- ffmpegParams: processing flags only. For additional inputs add extra -i flags at the start of ffmpegParams
-- outputFile: descriptive name with correct extension (.mp4, .jpg, etc.) — DO NOT include it in ffmpegParams
-- explanation: brief and technical — mention the key filters/flags used
-- Respond with ONLY valid JSON, no markdown, no code fences
+If the user is asking a QUESTION, commenting on results, or giving feedback (not a processing command), respond with:
+{
+  "type": "question",
+  "response": "your conversational HTML answer — be specific about what might have gone wrong or what the user should try, referencing their file metadata when relevant"
+}
 
-CRITICAL filter_complex rules:
-- ALWAYS name every output of filter_complex with a label e.g. [v] or [a]
-- ALWAYS use -map to select those labels, never use -map 0 or -map 1 when using filter_complex
-- ALWAYS scale inputs to the same height before hstack or vstack to avoid dimension mismatch errors
-- For side-by-side (hstack): scale both inputs to height 720, then hstack, then map the output
+For the explanation/response fields:
+- Use <strong> for filenames and key numbers
+- Use <code class="bg-[#1a2a1a] px-1 rounded text-green-400 text-xs"> for FFmpeg flags/filter names
+- Write as a knowledgeable friend, not a manual — say what you noticed and why you made each choice
+
+COMMAND RULES:
+- inputFile: main input (prepended as -i automatically — do NOT repeat it in ffmpegParams)
+- ffmpegParams: flags only; add extra -i flags at the START for additional inputs
+- outputFile: descriptive name with correct extension — do NOT include in ffmpegParams
+- For GIF output: outputFile must end in .gif
+- For image/frame output: outputFile must end in .jpg
+- For audio operations: preserve audio by default unless user says to remove it
+
+CRITICAL — filter_complex:
+- ALWAYS label every filter_complex output: [v], [a], etc.
+- ALWAYS use -map with those labels
+- ALWAYS scale inputs to same height before hstack or vstack
+- Never use -map 0 or -map 1 when filter_complex is present
+
+CRITICAL — trim/cut:
+- Use ONLY "-c", "copy" for all trim operations (-ss, -to, -t)
+- NEVER add libx264/crf/preset to a trim — stream copy is lossless and fast
+- Trimming must produce a SMALLER file than the input
+
+OPERATIONS SUPPORTED (generate ffmpegParams for any of these):
+- Compress/shrink: libx264 + crf 28 + preset fast + aac audio
+- Trim/cut: -ss start -to end -c copy
+- Side by side: scale both to 720h, hstack, map [v]
+- Rotate 90°: -vf "transpose=1"
+- Flip horizontal: -vf "hflip"
+- Flip vertical: -vf "vflip"
+- Mute audio: -c:v copy -an
+- Extract audio: -vn -c:a aac
+- Change speed (2x): -filter_complex "[0:v]setpts=0.5*PTS[v];[0:a]atempo=2.0[a]" -map [v] -map [a]
+- Slow motion (0.5x): setpts=2.0*PTS for video, atempo=0.5 for audio
+- Extract single frame: -ss 5 -vframes 1
+- Scale/resize: -vf "scale=1280:-2" (keeps aspect ratio, divisible by 2)
+- Add black bars (pad to 16:9): -vf "scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2"
+- Loop video N times: -stream_loop N -c copy (N=-1 for infinite)
+- Stabilize: -vf "vidstab" (requires libvidstab)
+- Convert format: change container, re-encode with libx264 + aac
+- Remove metadata: -map_metadata -1 -c copy
+- Convert to GIF: -vf "fps=12,scale=480:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" -loop 0
 
 EXAMPLES:
 
-Side by side with two files (file1.mp4 and file2.mp4):
-{
-  "inputFile": "file1.mp4",
-  "ffmpegParams": ["-i", "file2.mp4", "-filter_complex", "[0:v]scale=-2:720[v0];[1:v]scale=-2:720[v1];[v0][v1]hstack=inputs=2[v]", "-map", "[v]", "-c:v", "libx264", "-crf", "23", "-preset", "fast", "-an"],
-  "outputFile": "side_by_side.mp4",
-  "explanation": "Scale both clips to 720px height then hstack them side by side"
-}
+Compress with audio:
+{ "type": "command", "inputFile": "file1.mp4", "ffmpegParams": ["-c:v", "libx264", "-crf", "28", "-preset", "fast", "-c:a", "aac", "-b:a", "128k"], "outputFile": "compressed.mp4", "explanation": "Re-encoding <strong>file1.mp4</strong> at <code ...>CRF 28</code> with the fast preset. Audio re-encoded to 128k AAC. Expect 40–60% smaller file." }
 
-Trim video from 10s to 30s:
-{
-  "inputFile": "file1.mp4",
-  "ffmpegParams": ["-ss", "10", "-to", "30", "-c", "copy"],
-  "outputFile": "trimmed.mp4",
-  "explanation": "Trim using -ss and -to flags"
-}
+Trim 10s–30s:
+{ "type": "command", "inputFile": "file1.mp4", "ffmpegParams": ["-ss", "10", "-to", "30", "-c", "copy"], "outputFile": "trimmed.mp4", "explanation": "Cutting <strong>file1.mp4</strong> to the 10–30s window with <code ...>stream copy</code>. No re-encode — fast and lossless." }
 
-Compress video:
-{
-  "inputFile": "file1.mp4",
-  "ffmpegParams": ["-c:v", "libx264", "-crf", "28", "-preset", "fast", "-c:a", "aac", "-b:a", "128k"],
-  "outputFile": "compressed.mp4",
-  "explanation": "Re-encode with CRF 28 for smaller file size"
-}`,
-      messages: [{ role: 'user', content: `Files available: ${fileNames.join(', ')}\n\nCommand: ${command}` }]
+Rotate 90° clockwise:
+{ "type": "command", "inputFile": "file1.mp4", "ffmpegParams": ["-vf", "transpose=1", "-c:a", "copy"], "outputFile": "rotated.mp4", "explanation": "Rotating <strong>file1.mp4</strong> 90° clockwise using <code ...>transpose=1</code>. Audio passes through unchanged." }
+
+Mute audio:
+{ "type": "command", "inputFile": "file1.mp4", "ffmpegParams": ["-c:v", "copy", "-an"], "outputFile": "muted.mp4", "explanation": "Stripping audio from <strong>file1.mp4</strong> with <code ...>-an</code>. Video stream copied losslessly — no re-encode." }
+
+Double speed:
+{ "type": "command", "inputFile": "file1.mp4", "ffmpegParams": ["-filter_complex", "[0:v]setpts=0.5*PTS[v];[0:a]atempo=2.0[a]", "-map", "[v]", "-map", "[a]"], "outputFile": "2x_speed.mp4", "explanation": "Doubling playback speed with <code ...>setpts=0.5*PTS</code> for video and <code ...>atempo=2.0</code> for audio." }
+
+Convert to GIF:
+{ "type": "command", "inputFile": "file1.mp4", "ffmpegParams": ["-vf", "fps=12,scale=480:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse", "-loop", "0"], "outputFile": "animation.gif", "explanation": "Converting to GIF at 12fps, 480px wide. Using <code ...>palettegen</code>+<code ...>paletteuse</code> for accurate colors." }
+
+User asked why compression made file larger (question):
+{ "type": "question", "response": "That can happen when the source is already efficiently encoded — re-encoding at CRF 28 can't always beat the original codec's bitrate. Try <code ...>CRF 32</code> or <code ...>-preset slow</code> for more aggressive compression. If the file is short, the container overhead also adds relative cost." }`,
+      messages: [{ role: 'user', content: `Files available:\n- ${fileDescriptions}\n\nUser message: ${command}` }]
     })
   });
   if (!res.ok) throw new Error(`Claude API error: ${res.status}`);
   const data = await res.json();
   const raw = data.content[0].text.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '');
-  return JSON.parse(raw);
+  const parsed = JSON.parse(raw);
+  // Backwards-compat: if no type field, assume command
+  if (!parsed.type) parsed.type = 'command';
+  return parsed;
 }
 
 function setRealProgress(pct, label) {
@@ -960,7 +1328,7 @@ function setRealProgress(pct, label) {
   if (label) document.getElementById('progress-label').textContent = label;
 }
 
-async function pollJob(sid, jobId) {
+async function pollJob(sid, jobId, fallbackOutputFile = null) {
   return new Promise((resolve, reject) => {
     const interval = setInterval(async () => {
       try {
@@ -969,7 +1337,8 @@ async function pollJob(sid, jobId) {
         if (status.progress != null) setRealProgress(status.progress, 'Processing…');
         if (status.status === 'completed') {
           clearInterval(interval);
-          resolve(`${KITTY_API}/api/sessions/${sid}/download/${status.outputFile || jobId}`);
+          const outFile = status.outputFile || fallbackOutputFile || jobId;
+          resolve(`${KITTY_API}/api/sessions/${sid}/download/${outFile}`);
         } else if (status.status === 'failed') {
           clearInterval(interval);
           reject(new Error(status.error || 'Job failed'));
@@ -979,42 +1348,136 @@ async function pollJob(sid, jobId) {
   });
 }
 
-async function runRealPipeline(text) {
-  const selected = appFiles.filter(f => f.selected && !f.isOutput && f.file instanceof File);
-  const allReal  = appFiles.filter(f => !f.isOutput && f.file instanceof File);
-  const toProcess = selected.length ? selected : allReal;
+async function runRealPipeline(text, { onAnalysis = null, onPlanReady = null } = {}) {
+  // Canvas outputs: selected + real File + no backendName → need upload
+  const selectedUploadable   = appFiles.filter(f => f.selected && f.file instanceof File && !f.backendName);
+  // Server outputs: selected + has backendName → already on server
+  const selectedServerOutputs = appFiles.filter(f => f.selected && f.isOutput && f.backendName);
+  // Fallbacks when nothing explicitly selected
+  const allUserFiles       = appFiles.filter(f => !f.isOutput && f.file instanceof File);
+  const allServerOutputs   = appFiles.filter(f => f.isOutput && f.backendName);
 
-  if (!toProcess.length) return false; // fall back to demo
+  const hasExplicitSelection = selectedUploadable.length || selectedServerOutputs.length;
+  const toProcess    = hasExplicitSelection ? selectedUploadable    : allUserFiles;
+  const serverOutputs = hasExplicitSelection ? selectedServerOutputs : allServerOutputs;
+
+  if (!toProcess.length && !serverOutputs.length) return false; // fall back to demo
 
   // Client-side path for operations that need multiple inputs (backend can't resolve extra -i paths)
   const q = text.toLowerCase();
   const isSideBySide = q.includes('side by side') || q.includes('side-by-side') ||
-                       q.includes('split screen') || q.includes('next to') || q.includes('hstack');
-  if (isSideBySide) {
-    if (toProcess.length < 2) throw new Error('Select at least 2 videos for a side-by-side layout.');
-    setRealProgress(10, 'Preparing videos…');
-    const { blobUrl, ext } = await clientSideSideBySide(toProcess[0].file, toProcess[1].file);
-    const outName = `VideoValet_SideBySide_${Date.now()}.${ext}`;
-    return { plan: { outputFile: outName, explanation: `Combined ${toProcess[0].file.name} and ${toProcess[1].file.name} side by side at 720px height.` }, downloadUrl: blobUrl };
+                       q.includes('split screen') || q.includes('next to') || q.includes('hstack') ||
+                       q.includes('side to side') || q.includes('next each other');
+  const isConcatOp   = !isSideBySide && (q.includes(' after') || q.includes('after the') ||
+                       q.includes('concat') || q.includes('one after') || q.includes('back to back') ||
+                       q.includes('end to end') || q.includes('join') || q.includes('merge') ||
+                       q.includes('together') || q.includes('combine') || q.includes('sequential'));
+
+  const isGifCmd = q.includes('gif') || q.includes('animated') || q.includes('animation');
+
+  // Two-stage pipeline: multi-file + GIF → combine client-side, then server converts to GIF
+  if (isGifCmd && toProcess.length >= 2) {
+    if (onAnalysis) onAnalysis(toProcess);
+    const combineRunner = isSideBySide ? clientSideSideBySide : clientSideConcat;
+    setRealProgress(10, isSideBySide ? 'Combining videos…' : 'Joining clips…');
+    const { blobUrl: combinedBlobUrl, ext, thumb: canvasThumb, width: outW, height: outH, duration: outDur } = await combineRunner(toProcess[0].file, toProcess[1].file);
+    const combinedName = `VideoValet_combined_${Date.now()}.${ext}`;
+    const combinedBlob = await fetch(combinedBlobUrl).then(r => r.blob());
+    const combinedFile = new File([combinedBlob], combinedName, { type: combinedBlob.type || 'video/webm' });
+    // Tell user we're now converting
+    const gifGifPlan = { type: 'command', inputFile: combinedName, ffmpegParams: ['-vf', 'fps=12,scale=480:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse', '-loop', '0'], outputFile: `animation_${Date.now()}.gif`, explanation: `Combined <strong>${toProcess[0].file.name}</strong> and <strong>${toProcess[1].file.name}</strong> into one clip (client-side), then converted to GIF at 12fps — 480px wide.` };
+    if (onPlanReady) onPlanReady(gifGifPlan);
+    setRealProgress(15, 'Connecting…');
+    const sid = await getOrCreateSession();
+    setRealProgress(25, 'Uploading combined video…');
+    await uploadFileToSession(sid, combinedFile);
+    setRealProgress(45, 'Converting to GIF…');
+    const jobRes = await fetch(`${KITTY_API}/api/sessions/${sid}/jobs`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ inputFile: combinedName, outputFile: gifGifPlan.outputFile, ffmpegParams: gifGifPlan.ffmpegParams }) });
+    if (!jobRes.ok) throw new Error(`Job submission failed: ${jobRes.status}`);
+    const job = await jobRes.json();
+    const gifUrl = await pollJob(sid, job.jobId, gifGifPlan.outputFile);
+    return { plan: { ...gifGifPlan, thumb: canvasThumb, outputMeta: { width: outW, height: outH, duration: outDur, fps: 12 } }, downloadUrl: gifUrl };
   }
 
-  const fileNames = toProcess.map(f => f.file.name);
+  const clientSideRunner = isSideBySide ? clientSideSideBySide : (isConcatOp ? clientSideConcat : null);
+  if (clientSideRunner && toProcess.length >= 2) {
+    if (onAnalysis && toProcess.length) onAnalysis(toProcess);
+    const label = isSideBySide ? 'Preparing side-by-side…' : 'Joining clips…';
+    setRealProgress(10, label);
+    const { blobUrl, ext, thumb: canvasThumb, width: outW, height: outH, duration: outDur } = await clientSideRunner(toProcess[0].file, toProcess[1].file);
+    const prefix = isSideBySide ? 'VideoValet_SideBySide' : 'VideoValet_Joined';
+    const outName = `${prefix}_${Date.now()}.${ext}`;
+    const outBlob = await fetch(blobUrl).then(r => r.blob());
+    const outFile = new File([outBlob], outName, { type: outBlob.type || 'video/webm' });
+    const opExplanation = isSideBySide
+      ? `Combined <strong>${toProcess[0].file.name}</strong> and <strong>${toProcess[1].file.name}</strong> side by side, scaled to ${outH}px height.`
+      : `Joined <strong>${toProcess[0].file.name}</strong> then <strong>${toProcess[1].file.name}</strong> end-to-end. Output is ~${formatDur(outDur)}.`;
+    const opPlan = { outputFile: outName, ffmpegParams: [isSideBySide ? 'hstack' : 'concat'], explanation: opExplanation, realFile: outFile, thumb: canvasThumb, outputMeta: { width: outW, height: outH, duration: outDur, fps: 30 } };
+    if (onPlanReady) onPlanReady(opPlan);
+    return { plan: opPlan, downloadUrl: blobUrl };
+  }
 
-  // 1. Claude translates command → ffmpegParams
+  // Build file names list: user files first, then server outputs (already on the server)
+  const uploadFileNames   = new Set(toProcess.map(f => f.file.name));
+  const serverOutputNames = serverOutputs.map(f => f.backendName).filter(n => !uploadFileNames.has(n));
+  const allFileNames      = [...uploadFileNames, ...serverOutputNames];
+
+  if (!allFileNames.length) return false;
+
+  // Build metadata map for all known files
+  const fileMeta = {};
+  for (const f of toProcess) {
+    if (f.meta) fileMeta[f.file.name] = { ...f.meta, size: f.file.size };
+  }
+  for (const f of serverOutputs) {
+    if (f.meta) fileMeta[f.backendName] = { ...f.meta, size: f.file ? f.file.size : 0 };
+  }
+
+  // 1a. Claude decides: question or command? (before firing analysis msg)
   setRealProgress(5, 'Thinking…');
-  const plan = await askClaude(text, fileNames);
-  console.log('[VideoValet] FFmpeg plan:', JSON.stringify(plan, null, 2));
+  const plan = await askClaude(text, allFileNames, fileMeta);
+  console.log('[VideoValet] Claude response:', JSON.stringify(plan, null, 2));
+
+  // If it's a question/follow-up, surface the answer and bail early
+  if (plan.type === 'question') return { type: 'question', response: plan.response };
+
+  // 1b. Fire analysis message from local metadata now that we know it's a real command
+  const analysisFiles = toProcess.length ? toProcess : serverOutputs.map(o => ({ file: o.file, meta: o.meta }));
+  if (onAnalysis && analysisFiles.length) onAnalysis(analysisFiles);
+
+  if (onPlanReady) onPlanReady(plan);
+
+  // Safety net: if Claude returned a multi-input hstack plan, handle it client-side
+  const hasExtraInput = plan.ffmpegParams && plan.ffmpegParams.some((p, i) =>
+    p === '-i' && i > 0 && plan.ffmpegParams[i + 1] && !plan.ffmpegParams[i + 1].startsWith('-')
+  );
+  const isHstack = plan.ffmpegParams && plan.ffmpegParams.some(p => typeof p === 'string' && p.includes('hstack'));
+  if (hasExtraInput && isHstack && toProcess.length >= 2) {
+    setRealProgress(10, 'Rendering side by side…');
+    setThinkingText('Rendering frames…');
+    const { blobUrl, ext } = await clientSideSideBySide(toProcess[0].file, toProcess[1].file);
+    const outName = plan.outputFile.replace(/\.[^.]+$/, `.${ext}`);
+    const mergedPlan = { outputFile: outName, ffmpegParams: plan.ffmpegParams, explanation: plan.explanation };
+    if (onPlanReady) onPlanReady(mergedPlan);
+    return { plan: mergedPlan, downloadUrl: blobUrl };
+  }
 
   // 2. Create session
   setRealProgress(15, 'Connecting…');
+  setThinkingText('Connecting to processing server…');
   const sid = await getOrCreateSession();
 
-  // 3. Upload files
-  setRealProgress(25, 'Uploading files…');
-  for (const f of toProcess) await uploadFileToSession(sid, f.file);
+  // 3. Upload only user files (server outputs are already on the server under this session)
+  const toUpload = toProcess.filter(f => uploadFileNames.has(f.file.name));
+  if (toUpload.length) {
+    setRealProgress(25, 'Uploading files…');
+    setThinkingText(`Uploading ${toUpload.length} file${toUpload.length > 1 ? 's' : ''}…`);
+    for (const f of toUpload) await uploadFileToSession(sid, f.file);
+  }
 
   // 4. Submit job
   setRealProgress(40, 'Submitting job…');
+  setThinkingText('Processing with FFmpeg…');
   const jobRes = await fetch(`${KITTY_API}/api/sessions/${sid}/jobs`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
@@ -1025,19 +1488,49 @@ async function runRealPipeline(text) {
 
   // 5. Poll until done
   setRealProgress(45, 'Running FFmpeg…');
-  const downloadUrl = await pollJob(sid, job.jobId);
+  const downloadUrl = await pollJob(sid, job.jobId, plan.outputFile);
 
   return { plan, downloadUrl };
 }
 
-function showRealOutput(name, url) {
+function showRealOutput(name, url, realFile = null, prebuiltThumb = null, outputMeta = null) {
   const sec   = document.getElementById('output-section');
   const dlEl  = document.getElementById('output-dl');
   const shareBtn = document.getElementById('output-share');
 
   document.getElementById('output-name').textContent = name;
-  document.getElementById('output-meta').innerHTML = '';
-  document.getElementById('output-thumb').classList.add('hidden');
+  const outPills = [];
+  if (outputMeta && outputMeta.width && outputMeta.height) outPills.push(`${outputMeta.width}×${outputMeta.height}`);
+  if (outputMeta && outputMeta.fps) outPills.push(`${outputMeta.fps}fps`);
+  if (outputMeta && outputMeta.duration) { const d = formatDur(outputMeta.duration); if (d) outPills.push(d); }
+  outPills.push(detectCodec(name));
+  document.getElementById('output-meta').innerHTML = outPills.map(p => `<span class="meta-pill">${p}</span>`).join('');
+
+  const thumbEl  = document.getElementById('output-thumb');
+  const videoEl  = document.getElementById('output-video');
+  const playIcon = document.getElementById('output-play-icon');
+  if (url && /\.(mp4|mov|webm|mkv|m4v|avi|flv|wmv|ts|3gp|ogv|mts|m2ts)$/i.test(name)) {
+    videoEl.src = url;
+    videoEl.classList.remove('hidden');
+    thumbEl.classList.add('hidden');
+    if (playIcon) playIcon.classList.add('hidden');
+  } else if (url && isImageFile(name)) {
+    videoEl.classList.add('hidden');
+    if (playIcon) playIcon.classList.add('hidden');
+    // Fetch as blob to ensure cross-origin/header issues don't prevent display
+    fetch(url).then(r => r.blob()).then(blob => {
+      const blobUrl = URL.createObjectURL(blob);
+      thumbEl.src = blobUrl;
+      thumbEl.classList.remove('hidden');
+    }).catch(() => {
+      thumbEl.src = url;
+      thumbEl.classList.remove('hidden');
+    });
+  } else {
+    videoEl.classList.add('hidden');
+    thumbEl.classList.add('hidden');
+    if (playIcon) playIcon.classList.remove('hidden');
+  }
 
   dlEl.href = url; dlEl.download = name; dlEl.onclick = null;
   currentOutput = { name, url, thumb: null, isReal: true };
@@ -1048,7 +1541,8 @@ function showRealOutput(name, url) {
 
   sec.classList.remove('hidden');
   sec.closest('.scroll-panel').scrollTop = 0;
-  addOutputToGrid(name, null, url);
+  // For server outputs use name as backendName; for canvas outputs (realFile) backendName is null
+  addOutputToGrid(name, prebuiltThumb, url, realFile ? null : name, realFile, outputMeta);
   if (window.innerWidth < 640) showToast('Output ready — tap Files ↑ to download');
 }
 
@@ -1102,15 +1596,29 @@ async function sendMessage() {
   messageCount++;
 
   addUserMsg(text);
-  addThinkingMsg();
+
+  // Build probe intent text before showing the thinking bubble so it's contextual from the start
+  // Include all selected files (outputs too) so "turn to gif" references the actual output
+  const allSelected  = appFiles.filter(f => f.selected);
+  const allNonOutput = appFiles.filter(f => !f.isOutput && f.file instanceof File);
+  const targets  = allSelected.length ? allSelected : allNonOutput;
+  const names    = targets.map(f => `<strong>${f.file ? f.file.name : f.backendName}</strong>`);
+  const probeText = targets.length === 0
+    ? 'Thinking…'
+    : targets.length === 1
+      ? `Let me analyze ${names[0]}…`
+      : `Let me check ${names.slice(0, 2).join(' and ')} before combining them…`;
+
+  addThinkingMsg(probeText);
   startProcessing();
 
   if (window.innerWidth < 640 && document.getElementById('panel-files').classList.contains('flex')) {
     switchTab('chat');
   }
 
-  // First command is always the scripted demo (saves API calls)
-  if (messageCount === 1) {
+  // Only run the scripted demo if no real files are loaded
+  const hasRealFiles = appFiles.some(f => !f.isOutput && f.file instanceof File);
+  if (messageCount === 1 && !hasRealFiles) {
     setTimeout(() => {
       const t = document.getElementById('thinking-msg'); if (t) t.remove();
       stopProcessing();
@@ -1121,25 +1629,56 @@ async function sendMessage() {
   }
 
   try {
-    const result = await runRealPipeline(text);
 
-    const t = document.getElementById('thinking-msg');
-    if (t) t.remove();
+    let planShown = false;
+
+    const result = await runRealPipeline(text, {
+      // Message 2 — file analysis from local metadata, fires after 400ms
+      onAnalysis: (files) => {
+        setTimeout(() => {
+          if (files.length) addAnalysisMsg(buildAnalysisText(files, text));
+        }, 400);
+      },
+      // Message 3 — running status when plan arrives
+      onPlanReady: (plan) => {
+        if (planShown) return;
+        planShown = true;
+        addRunningMsg(buildRunningText(plan));
+      }
+    });
+
+    // Remove running message if still present
+    const runEl = document.getElementById('running-msg');
+    if (runEl) runEl.remove();
 
     if (!result) {
       // No real files — fall back to demo
+      const tEl = document.getElementById('thinking-msg');
+      if (tEl) tEl.remove();
       stopProcessing();
       addBotMsg(getBotResponse(text));
       setTimeout(() => showOutput(text), 350);
       return;
     }
 
+    // Question response — just show the answer, no file output
+    if (result.type === 'question') {
+      stopProcessing();
+      const tEl = document.getElementById('thinking-msg');
+      if (tEl) tEl.remove();
+      addBotMsg(result.response);
+      return;
+    }
+
+    // Message 4 — done
     stopProcessing();
     const tag = s => `<code class="bg-[#1a2a1a] px-1 rounded text-green-400 text-xs">${s}</code>`;
-    addBotMsg(result.plan.explanation + `<br><br>✅ Done — ${tag(result.plan.outputFile)} is ready to download.`);
-    showRealOutput(result.plan.outputFile, result.downloadUrl);
+    addBotMsg(`Done! Here's what I did:<br><br>${result.plan.explanation}<br><br>✅ ${tag(result.plan.outputFile)} is ready to download.`);
+    showRealOutput(result.plan.outputFile, result.downloadUrl, result.plan.realFile || null, result.plan.thumb || null, result.plan.outputMeta || null);
 
   } catch (err) {
+    const runEl = document.getElementById('running-msg');
+    if (runEl) runEl.remove();
     const t = document.getElementById('thinking-msg');
     if (t) t.remove();
     stopProcessing();
@@ -1163,38 +1702,59 @@ document.addEventListener('drop', async e=>{
 
 async function addRealFiles(files) {
   if (!files || !files.length) return;
-  const videos = files.filter(f => f instanceof File && (f.type.startsWith('video/') || /\.(mp4|mov|avi|mkv|webm|m4v)$/i.test(f.name)));
-  if (!videos.length) return;
+  const media = files.filter(f => f instanceof File && (
+    f.type.startsWith('video/') || f.type.startsWith('image/') ||
+    /\.(mp4|mov|avi|mkv|webm|m4v|gif|jpe?g|png|webp|bmp|tiff?)$/i.test(f.name)
+  ));
+  if (!media.length) return;
 
-  // Remove any "empty state" placeholder so the grid shows cards
   const startIdx = appFiles.length;
-  videos.forEach(f => {
-    const isLarge = f.size > LARGE_FILE_BYTES;
+  media.forEach(f => {
     appFiles.push({ file: f, thumb: null, url: null, meta: null, selected: true, isDemo: false, color: '#1a2535', loading: true });
   });
   renderGrid();
 
-  // On desktop, make sure files panel is visible
   if (window.innerWidth >= 640) {
     const fp = document.getElementById('panel-files');
     fp.classList.remove('hidden'); fp.classList.add('flex');
   }
 
-  const countMsg = videos.length === 1 ? '1 video' : `${videos.length} videos`;
-  const largeFiles = videos.filter(f=>f.size>LARGE_FILE_BYTES);
+  const vCount = media.filter(f => !isImageFile(f.name) && !f.type.startsWith('image/')).length;
+  const iCount = media.length - vCount;
+  const parts = [];
+  if (vCount) parts.push(`${vCount} video${vCount!==1?'s':''}`);
+  if (iCount) parts.push(`${iCount} image${iCount!==1?'s':''}`);
+  const countMsg = parts.join(' + ');
+  const largeFiles = media.filter(f=>f.size>LARGE_FILE_BYTES);
   let msg = `<strong>${countMsg} added</strong> — all selected and ready.`;
   if (largeFiles.length) msg += `<br><span class="text-orange-400 text-xs">⏳ ${largeFiles.length} large file${largeFiles.length>1?'s':''} detected — thumbnails may take a moment.</span>`;
   addSystemMsg(msg);
 
-  // On mobile, switch to Files tab so user sees their uploads
   if (window.innerWidth < 640) switchTab('files');
 
   for (let i = startIdx; i < appFiles.length; i++) {
-    const { thumb, url, meta } = await generateThumb(appFiles[i].file);
-    appFiles[i].thumb   = thumb;
-    appFiles[i].url     = url;
-    appFiles[i].meta    = meta;
-    appFiles[i].loading = false;
+    const f = appFiles[i].file;
+    const isImg = isImageFile(f.name) || f.type.startsWith('image/');
+    if (isImg) {
+      const url = URL.createObjectURL(f);
+      const dims = await new Promise(resolve => {
+        const img = new Image();
+        img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+        img.onerror = () => resolve({ width: null, height: null });
+        setTimeout(() => resolve({ width: null, height: null }), 3000);
+        img.src = url;
+      });
+      appFiles[i].thumb   = url;
+      appFiles[i].url     = url;
+      appFiles[i].meta    = { width: dims.width, height: dims.height, duration: null, fps: null };
+      appFiles[i].loading = false;
+    } else {
+      const { thumb, url, meta } = await generateThumb(f);
+      appFiles[i].thumb   = thumb;
+      appFiles[i].url     = url;
+      appFiles[i].meta    = meta;
+      appFiles[i].loading = false;
+    }
     renderGrid();
   }
 }
@@ -1407,8 +1967,21 @@ function playFile(e, i) {
   e.stopPropagation();
   const f = appFiles[i];
   if (!f || !f.url) return;
+  if (isImageFile(f.file.name)) {
+    // Show image in a fullscreen overlay
+    const modal = document.getElementById('video-modal');
+    const vid   = document.getElementById('modal-video');
+    const imgViewer = document.getElementById('modal-img');
+    vid.classList.add('hidden'); vid.src = '';
+    imgViewer.src = f.url; imgViewer.classList.remove('hidden');
+    modal.classList.remove('hidden');
+    return;
+  }
   const modal = document.getElementById('video-modal');
   const vid   = document.getElementById('modal-video');
+  const imgViewer = document.getElementById('modal-img');
+  if (imgViewer) { imgViewer.classList.add('hidden'); imgViewer.src = ''; }
+  vid.classList.remove('hidden');
   vid.src = f.url;
   modal.classList.remove('hidden');
   vid.play().catch(() => {});
@@ -1417,8 +1990,9 @@ function playFile(e, i) {
 function closeVideoModal() {
   const modal = document.getElementById('video-modal');
   const vid   = document.getElementById('modal-video');
-  vid.pause();
-  vid.src = '';
+  const img   = document.getElementById('modal-img');
+  vid.pause(); vid.src = '';
+  if (img) { img.src = ''; img.classList.add('hidden'); }
   modal.classList.add('hidden');
 }
 </script>
@@ -1431,6 +2005,8 @@ function closeVideoModal() {
     <video id="modal-video" controls playsinline
            class="max-w-[90vw] max-h-[85vh] rounded-xl"
            style="background:#000"></video>
+    <img id="modal-img" src="" alt=""
+         class="hidden max-w-[90vw] max-h-[85vh] rounded-xl object-contain" />
     <button onclick="closeVideoModal()"
             class="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-[#222] border border-[#333] text-neutral-400 hover:text-white flex items-center justify-center text-lg leading-none">×</button>
   </div>
