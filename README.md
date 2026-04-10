@@ -83,7 +83,7 @@ Body:
 ### 2. KITTY API (session + file upload + processing)
 
 ```js
-const KITTY_API = 'https://ai-kitty.web-cardinalblue.workers.dev';
+const KITTY_API = 'YOUR_BACKEND_API_URL_HERE'; // e.g. https://your-worker.workers.dev
 
 // Create session
 POST /api/sessions → { sessionId }
