@@ -154,3 +154,7 @@ The key interaction states to implement:
 | Processing | `#processing-card` visible, progress bar animating |
 | Output ready | `#output-section` visible with download/share |
 | Error | Chat bubble with error text |
+
+---
+
+*This UI was designed and built with the help of Claude (Anthropic) and AI-assisted tooling.*
